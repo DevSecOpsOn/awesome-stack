@@ -4,7 +4,7 @@
 
 ![logo](https://raw.githubusercontent.com/docker-library/docs/471fa6e4cb58062ccbf91afc111980f9c7004981/swarm/logo.png)
 
-> A curated list of Docker Stack.
+> A curated list of Docker Stack ready to use
 
 # Motivation
 
@@ -44,7 +44,7 @@ Make sure that you have docker and docker desktop installed
 - [localstack](localstack) - a cloud service emulator that runs in a single container on your laptop or in your CI environment.
 - [mongodb](mongodb) - a source-available, cross-platform, document-oriented database program. Classified as a NoSQL database product
 - [nginx](nginx) - HTTP web server, reverse proxy, content cache, load balancer, TCP/UDP proxy server, and mail proxy server.
-- [ngrok](ngrok) - ngrok is your app's front door. ngrok is a globally distributed 
+- [ngrok](ngrok) - ngrok is your app's front door. ngrok is a globally distributed
 reverse proxy
  that secures, protects and accelerates your applications and network services, no matter where you run them. ngrok supports delivering HTTP, TLS or TCP-based applications.
 - [openstack](openstack) - OpenStack is a set of software components that provide common services for cloud infrastructure.
@@ -84,7 +84,7 @@ make devops-stack
 Below stack list still in working progress mode.
 
 - [concourse](concurse) - Centered around the simple mechanics of resources, tasks, and jobs, Concourse delivers a versatile approach to automation that excels at CI/CD.
-- [elastic](elastic) - 
+- [elastic](elastic) -
 - [linkerd](linkerd) - is a service mesh for Kubernetes. It makes running services easier and safer by giving you runtime debugging, observability, reliability, and security.
 
 ### Contribute
