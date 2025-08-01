@@ -91,4 +91,4 @@ Below stack list still in working progress mode.
 
 You are welcome to contribute and share new stack(s). Please check the [Contribution Guide](CONTRIBUTE.md) for more details.
 
-`Fork me!` 🥰
+`Fork me!` 🥰 🚀
