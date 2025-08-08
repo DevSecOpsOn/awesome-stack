@@ -93,6 +93,8 @@ Below stack list still working progress mode.
 
 ### Contribute
 
+---
+
 You are welcome to contribute and share new stack(s). Please check the [Contribution Guide](CONTRIBUTE.md) for more details.
 
 `Fork me!` 🥰 🚀
