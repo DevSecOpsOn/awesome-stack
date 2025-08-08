@@ -74,7 +74,7 @@ make all
 For DevOps/DevSecOps/SRE tools run bellow command to deploy all stacks defined in `DEVOPS` variable.
 
 ```sh
-make devops-stack
+make devops
 ```
 
 ---
