@@ -16,7 +16,16 @@ Main goal is to have a closer **cluster concept** for DevOps, DevSecOps, SRE and
 
 Make sure you have docker and docker desktop installed
 
-1. [Docker CE](https://docs.docker.com/get-started/get-docker/) - Docker is an open platform for developing, shipping, and running applications.
+1. [Docker Desktop](https://docs.docker.com/get-started/get-docker/) - Docker is an open platform for developing, shipping, and running applications.
+
+2. Docker resources
+
+All stacks have been tested on a docker desktop with the following resources.
+
+> In case you don't have enough resources, you can use a docker desktop with less resources.
+
+<img src="docker_desktop_resources.png" alt="drawing" style="width:800px;"/>
+
 
 * Once you have met all above requisites move forward to documentation section
 
@@ -35,9 +44,10 @@ Make sure you have docker and docker desktop installed
 
 - [atuin](atuin) - Sync, search and backup shell history with Atuin.
 - [consul](consul) - is a service networking solution that enables teams to manage secure network connectivity between services, across on-prem, hybrid cloud, and multi-cloud environments and runtimes.
-- [db = adminer + mysql + postgres](db) - Adminer, MySQL and PostgreSQL stack
+- [db = adminer + mysql + postgres](db) - Adminer, MySQL database and PostgreSQL database stack
 - [droneci + postgres](droneci) - Drone is a self-service Continuous Integration platform for busy development teams.
 - [flask](flask) -  is an extension for Flask that adds support for quickly building REST APIs with huge flexibility around the JSONAPI 1.0 specification.
+- [fluentbit](fluentbit) - Fluent Bit is a super fast, lightweight, and highly scalable logging, metrics, and traces processor and forwarder. It is the preferred choice for cloud and containerized environments.
 - [gitea + postgres](gitea) - easiest, fastest, and most painless way of setting up a self-hosted Git service.
 - [gitness/harness + postgres](harness) - all-in-one platform that integrates source code management, CI/CD pipelines, hosted development environments, and artifact management.
 - [gocd + postgres](gocd) - an open-source Continuous Integration and Continuous Delivery system.
@@ -51,12 +61,16 @@ Make sure you have docker and docker desktop installed
 reverse proxy
  that secures, protects and accelerates your applications and network services, no matter where you run them. ngrok supports delivering HTTP, TLS or TCP-based applications.
 - [openstack](openstack) - OpenStack is a set of software components that provide common services for cloud infrastructure.
+- [passbolt](passbolt) - Passbolt is a free and open source password manager that allows team members to store and share credentials securely.
 - [portainer](portainer) - Effortless Container Management for Kubernetes, Docker and Podman · Portainer is a universal container management platform.
-- [prometheus + grafana](prometheus) - An open-source monitoring system with a dimensional data model, flexible query language, efficient time series database and modern alerting approach.
+- [prometheus + grafana stack](prometheus) - An open-source monitoring system with a dimensional data model, flexible query language, efficient time series database and modern alerting approach.
+- [redis](redis) - Redis is an in-memory data store used by millions of developers as a cache, vector database, document database, streaming engine, and message broker.
+- [runatlantis + redis](runatlantis) - Atlantis Terraform Pull Request Automation Running Terraform Workflows with Ease
 - [teamcity + postgres](teamcity) - powerful Continuous Integration and Deployment tool for Developers and DevOps Engineers.
 - [traefik](traefik) - Cloud-native, GitOps-driven API runtime solutions for demanding DevOps and Platform Engineers with diverse use-cases, environments, and deployment models.
 - [vault + consul](vault) - Secure, store, and tightly control access to tokens, passwords, certificates, encryption keys for protecting secrets, and other sensitive data using a UI, CLI, or HTTP API.
 - [webhookrelay](webhookrelay) - Webhook Relay is a secure tunneling solution that provides: Webhook Forwarding &Bidirectional Tunnelling.
+- [watchtower](watchtower) - Watchtower is an application that will monitor your running Docker containers and watch for changes to the images that those containers were originally started from.
 
 ### Docker Stack single service (non integrated)
 
@@ -66,6 +80,7 @@ reverse proxy
 - [nginx](nginx)
 - [mongodb](mongodb)
 - [traefik](traefik)
+- [watchtower](watchtower)
 
 ### Getting started
 
@@ -78,7 +93,7 @@ make setup
 For DevOps/DevSecOps/SRE tools run bellow command to deploy all stacks defined in `DEVOPS` variable.
 
 ```sh
-make devops
+make devsecops
 ```
 
 ---
@@ -88,8 +103,12 @@ make devops
 Below stack list still working progress mode.
 
 - [concourse](concurse) - Centered around the simple mechanics of resources, tasks, and jobs, Concourse delivers a versatile approach to automation that excels at CI/CD.
-- [elastic](elastic) -
+- [elastic + logstash + filebeat + kibana](elfk) - The open source platform that powers search, observability, security, and more ...
 - [linkerd](linkerd) - is a service mesh for Kubernetes. It makes running services easier and safer by giving you runtime debugging, observability, reliability, and security.
+
+Podman support
+
+Deploying stack onto Podman is still in progress. 👨‍💻
 
 ### Contribute
 
