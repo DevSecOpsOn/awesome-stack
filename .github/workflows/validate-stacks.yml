@@ -1,0 +1,112 @@
+name: Validate Stack Files
+
+on:
+  workflow_call:
+    outputs:
+      validation-results:
+        description: "Stack validation results summary"
+        value: ${{ jobs.validate-stacks.outputs.validation-results }}
+
+env:
+  DOCKER_BUILDKIT: 1
+  COMPOSE_DOCKER_CLI_BUILD: 1
+
+jobs:
+  validate-stacks:
+    name: Validate Stack Files
+    runs-on: ubuntu-latest
+    outputs:
+      validation-results: ${{ steps.validation-summary.outputs.results }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Validate Docker Compose syntax
+        run: |
+          echo "🔍 Validating Docker Compose files..."
+          
+          # Find all YAML files that look like Docker Compose files
+          find . -name "*.yml" -o -name "*.yaml" | while read file; do
+            if grep -q "version:" "$file" && grep -q "services:" "$file"; then
+              echo "Validating: $file"
+              docker-compose -f "$file" config --quiet
+              if [ $? -eq 0 ]; then
+                echo "✅ $file is valid"
+              else
+                echo "❌ $file has syntax errors"
+                exit 1
+              fi
+            fi
+          done
+
+      - name: Validate stack file structure
+        run: |
+          echo "🔍 Checking stack file structure..."
+          
+          # Define stack directories from Makefile
+          STACK_DIRS="traefik db ngrok droneci redis atuin gitea harness gogs runatlantis homarr portainer beszel prometheus grafana fluentbit jaeger otelcol consul localstack watchtower minio vault passbolt"
+          
+          for stack_dir in $STACK_DIRS; do
+            if [ -d "$stack_dir" ]; then
+              stack_file=$(find "$stack_dir" -maxdepth 1 -name "*.yml" -o -name "*.yaml" | head -n 1)
+              if [ -n "$stack_file" ]; then
+                echo "Checking $stack_file for required configurations..."
+                
+                # Check for docker2docker network
+                if grep -q "docker2docker" "$stack_file"; then
+                  echo "✅ $stack_file uses docker2docker network"
+                else
+                  echo "⚠️  $stack_file missing docker2docker network reference"
+                fi
+                
+                # Check for proper service definitions
+                if grep -q "deploy:" "$stack_file"; then
+                  echo "✅ $stack_file has deploy configuration"
+                else
+                  echo "⚠️  $stack_file missing deploy configuration"
+                fi
+                
+                # Check for required labels for Traefik integration
+                if grep -q "traefik.enable" "$stack_file"; then
+                  echo "✅ $stack_file has Traefik labels"
+                else
+                  echo "ℹ️  $stack_file doesn't use Traefik (may be internal service)"
+                fi
+              else
+                echo "⚠️  No stack file found in $stack_dir"
+              fi
+            else
+              echo "ℹ️  Directory $stack_dir not found (optional stack)"
+            fi
+          done
+
+      - name: Check for environment variable usage
+        run: |
+          echo "🔍 Checking environment variable usage..."
+          
+          # Check for proper secret usage
+          if grep -r "DOCKER_SECRET_DB" . --include="*.yml" --include="*.yaml"; then
+            echo "✅ Found proper secret usage"
+          else
+            echo "⚠️  No secret usage found"
+          fi
+          
+          # Check for hardcoded passwords (security issue)
+          if grep -r -i "password.*:" . --include="*.yml" --include="*.yaml" | grep -v "\${" | grep -v "from_secret"; then
+            echo "❌ Found potential hardcoded passwords"
+            exit 1
+          else
+            echo "✅ No hardcoded passwords found"
+          fi
+
+      - name: Validation summary
+        id: validation-summary
+        run: |
+          echo "results=All stack files validated successfully" >> $GITHUB_OUTPUT
+          echo "✅ Docker Compose syntax validation completed"
+          echo "✅ Stack structure validation completed"
+          echo "✅ Security validation completed"
