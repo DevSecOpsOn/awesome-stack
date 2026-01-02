@@ -1,0 +1,79 @@
+# Stack validation pipeline
+validate-stacks:
+  stage: validate
+  image: docker:latest
+  services:
+    - docker:dind
+  variables:
+    DOCKER_TLS_CERTDIR: "/certs"
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+  before_script:
+    - apk add --no-cache docker-compose
+  script:
+    - echo "Validating Docker Compose files"
+    
+    # Validate Docker Compose syntax
+    - |
+      echo "Checking Docker Compose syntax"
+      find . -name "*.yml" -o -name "*.yaml" | while read file; do
+        if grep -q "version:" "$file" && grep -q "services:" "$file"; then
+          echo "Validating: $file"
+          docker-compose -f "$file" config --quiet
+          if [ $? -eq 0 ]; then
+            echo "Valid: $file"
+          else
+            echo "Invalid: $file"
+            exit 1
+          fi
+        fi
+      done
+    
+    # Validate stack structure
+    - |
+      echo "Checking stack file structure"
+      STACK_DIRS="traefik db ngrok droneci redis atuin gitea harness gogs runatlantis homarr portainer beszel prometheus grafana fluentbit jaeger otelcol consul localstack watchtower minio vault passbolt concourse"
+      
+      for stack_dir in $STACK_DIRS; do
+        if [ -d "$stack_dir" ]; then
+          stack_file=$(find "$stack_dir" -maxdepth 1 -name "*.yml" -o -name "*.yaml" | head -n 1)
+          if [ -n "$stack_file" ]; then
+            echo "Checking $stack_file for required configurations"
+            
+            # Check for docker2docker network
+            if grep -q "docker2docker" "$stack_file"; then
+              echo "Network check passed: $stack_file"
+            else
+              echo "Warning: $stack_file missing docker2docker network reference"
+            fi
+            
+            # Check for deploy configuration
+            if grep -q "deploy:" "$stack_file"; then
+              echo "Deploy config found: $stack_file"
+            else
+              echo "Warning: $stack_file missing deploy configuration"
+            fi
+          else
+            echo "Info: No stack file found in $stack_dir"
+          fi
+        else
+          echo "Info: Directory $stack_dir not found"
+        fi
+      done
+    
+    # Check for hardcoded secrets
+    - |
+      echo "Checking for hardcoded passwords"
+      if grep -r -i "password.*:" . --include="*.yml" --include="*.yaml" | grep -v "\${" | grep -v "from_secret"; then
+        echo "Error: Found potential hardcoded passwords"
+        exit 1
+      else
+        echo "No hardcoded passwords found"
+      fi
+    
+    - echo "Stack validation completed successfully"
+  artifacts:
+    paths:
+      - validation-report.txt
+    expire_in: 1 week
+  allow_failure: false

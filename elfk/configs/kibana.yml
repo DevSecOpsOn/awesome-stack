@@ -1,0 +1,144 @@
+# Kibana Configuration
+# Best practices for production-ready setup
+
+# Server configuration
+server.name: "kibana"
+server.host: "0.0.0.0"
+server.port: 5601
+server.basePath: ""
+server.rewriteBasePath: false
+
+# Elasticsearch configuration
+elasticsearch.hosts: ["http://elasticsearch:9200"]
+elasticsearch.requestTimeout: 30000
+elasticsearch.shardTimeout: 30000
+elasticsearch.pingTimeout: 1500
+
+# Security settings (disabled for development)
+elasticsearch.ssl.verificationMode: none
+elasticsearch.username: ""
+elasticsearch.password: ""
+
+# Kibana index
+kibana.index: ".kibana"
+kibana.defaultAppId: "home"
+
+# Logging configuration
+logging.appenders:
+  file:
+    type: file
+    fileName: /var/log/kibana/kibana.log
+    layout:
+      type: json
+  console:
+    type: console
+    layout:
+      type: pattern
+      pattern: "[%date][%level][%logger] %message"
+
+logging.loggers:
+  - name: root
+    appenders: [console, file]
+    level: info
+  - name: elasticsearch
+    level: warn
+  - name: elasticsearch.query
+    level: warn
+
+# Monitoring
+monitoring.enabled: true
+monitoring.kibana.collection.enabled: true
+monitoring.kibana.collection.interval: 10000
+
+# Performance settings
+elasticsearch.requestHeadersWhitelist: ["authorization"]
+elasticsearch.customHeaders: {}
+
+# UI settings
+map.includeElasticMapsService: true
+map.proxyElasticMapsServiceInMaps: false
+
+# Telemetry (disabled for privacy)
+telemetry.enabled: false
+telemetry.optIn: false
+
+# Security features (disabled for development)
+xpack.security.enabled: false
+xpack.encryptedSavedObjects.encryptionKey: "a7a6311933d3503b89bc2dbc36572c33a6c10925682e591bffcab6911c06786d"
+
+# Reporting (basic configuration)
+xpack.reporting.enabled: true
+xpack.reporting.encryptionKey: "a7a6311933d3503b89bc2dbc36572c33a6c10925682e591bffcab6911c06786d"
+
+# Canvas
+xpack.canvas.enabled: true
+
+# Machine Learning (disabled for development)
+xpack.ml.enabled: false
+
+# APM (disabled for development)
+xpack.apm.enabled: false
+
+# Uptime monitoring
+xpack.uptime.enabled: true
+
+# Infra monitoring
+xpack.infra.enabled: true
+
+# Logs UI
+xpack.logs.enabled: true
+
+# Metrics UI
+xpack.metrics.enabled: true
+
+# SIEM (disabled for development)
+xpack.siem.enabled: false
+
+# Spaces (enabled)
+xpack.spaces.enabled: true
+xpack.spaces.maxSpaces: 1000
+
+# Saved objects
+savedObjects.maxImportPayloadBytes: 26214400
+savedObjects.maxImportExportSize: 10000
+
+# Data views
+data.search.aggs.shardDelay.enabled: true
+
+# Console settings
+console.enabled: true
+console.proxyConfig: []
+
+# Dev tools
+devTools.enabled: true
+
+# Vis type vega
+vis_type_vega.enabled: true
+vis_type_vega.enableExternalUrls: false
+
+# Newsfeed
+newsfeed.enabled: true
+
+# Home page
+home.disableWelcomeScreen: false
+
+# Status page
+status.allowAnonymous: true
+
+# Optimize settings
+optimize.enabled: true
+
+# PID file
+pid.file: /var/run/kibana.pid
+
+# Ops configuration
+ops.interval: 5000
+
+# Server settings
+server.maxPayloadBytes: 1048576
+server.keepaliveTimeout: 120000
+server.socketTimeout: 120000
+
+# Elasticsearch settings
+elasticsearch.preserveHost: true
+elasticsearch.startupTime

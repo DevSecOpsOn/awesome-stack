@@ -1,0 +1,61 @@
+version: "3.9"
+
+services:
+
+  dokploy:
+    image: dokploy/dokploy:latest
+    deploy:
+      labels:
+        - traefik.enable=true
+        - traefik.swarm.lbswarm=false
+        - traefik.swarm.network=docker2docker
+        - traefik.http.routers.dokploy.entrypoints=web,websecure
+        - traefik.http.routers.dokploy.rule=Host(`dokploy.docker.local`)
+        - traefik.http.services.dokploy.loadbalancer.server.port=3000
+        - traefik.consulcatalog.connect=true
+        - sablier.enable=true
+        - sablier.group=devsecops
+      replicas: 1
+      mode: replicated
+      endpoint_mode: vip
+      update_config:
+        parallelism: 1
+        order: stop-first
+        failure_action: rollback
+        delay: 10s
+      restart_policy:
+        condition: any
+        delay: 5s
+        window: 120s
+      # placement:
+      #   constraints:
+      #     - node.role == manager
+      resources:
+        limits:
+          memory: 2G
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "200k"
+        max-file: "10"
+    environment:
+      SERVICE_NAME: "dokploy"
+      SERVICE_TAGS: "deployment,paas"
+      REDIS_HOST: "redis://default:${DOCKER_SECRET_DB}@redis_server:6379/3"
+      DATABASE_URL: "postgresql://root:${DOCKER_SECRET_DB}@db_postgres:5432/dokploy?sslmode=disable"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./etc/dokploy:/etc/dokploy:rw
+      - dokploy_config:/root/.docker
+    # ports:
+    #   - "3000:3000"
+    networks:
+      - docker2docker
+
+volumes:
+  dokploy_config:
+    driver: local
+
+networks:
+  docker2docker:
+    external: true

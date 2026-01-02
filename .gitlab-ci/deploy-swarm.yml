@@ -1,0 +1,219 @@
+# Docker Swarm deployment pipeline
+setup-swarm:
+  stage: deploy
+  image: docker:latest
+  services:
+    - docker:dind
+  variables:
+    DOCKER_TLS_CERTDIR: "/certs"
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+  script:
+    - echo "Setting up Docker Swarm"
+    
+    # Initialize Docker Swarm
+    - |
+      if ! docker info | grep -q "Swarm: active"; then
+        docker swarm init --advertise-addr 127.0.0.1
+        echo "Docker Swarm initialized"
+      else
+        echo "Docker Swarm already active"
+      fi
+    
+    # Create overlay network
+    - |
+      if ! docker network ls | grep -q "docker2docker"; then
+        docker network create --driver=overlay --attachable docker2docker
+        echo "Created docker2docker network"
+      else
+        echo "docker2docker network already exists"
+      fi
+    
+    # Create secrets for CI environment
+    - |
+      echo "dummy-db-password" | docker secret create DOCKER_SECRET_DB - 2>/dev/null || echo "DOCKER_SECRET_DB secret exists"
+      echo "dummy-slack-hook" | docker secret create SLACK_ALERTS_HOOK - 2>/dev/null || echo "SLACK_ALERTS_HOOK secret exists"
+    
+    - echo "Docker Swarm setup completed"
+  artifacts:
+    paths:
+      - swarm-setup.log
+    expire_in: 1 hour
+
+deploy-base-stacks:
+  stage: deploy
+  image: docker:latest
+  services:
+    - docker:dind
+  variables:
+    DOCKER_TLS_CERTDIR: "/certs"
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+  needs:
+    - job: setup-swarm
+  script:
+    - echo "Deploying base stacks"
+    
+    # Deploy base infrastructure stacks
+    - |
+      BASE_STACKS="traefik db ngrok droneci"
+      
+      for stack in $BASE_STACKS; do
+        if [ -d "$stack" ]; then
+          stack_file=$(find "$stack" -maxdepth 1 -name "*.yml" -o -name "*.yaml" | head -n 1)
+          if [ -n "$stack_file" ]; then
+            echo "Deploying $stack using $stack_file"
+            docker stack deploy -c "$stack_file" "$stack"
+            echo "Stack $stack deployed"
+            sleep 5
+          else
+            echo "No stack file found for $stack"
+          fi
+        else
+          echo "Directory $stack not found"
+        fi
+      done
+    
+    - echo "Base stacks deployment completed"
+
+deploy-devops-stacks:
+  stage: deploy
+  image: docker:latest
+  services:
+    - docker:dind
+  variables:
+    DOCKER_TLS_CERTDIR: "/certs"
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+  needs:
+    - job: deploy-base-stacks
+  script:
+    - echo "Deploying DevOps stacks"
+    
+    # Deploy DevOps stacks
+    - |
+      DEVOPS_STACKS="redis atuin gitea harness gogs runatlantis homarr portainer beszel prometheus grafana fluentbit jaeger otelcol consul localstack watchtower minio concourse"
+      
+      for stack in $DEVOPS_STACKS; do
+        if [ -d "$stack" ]; then
+          stack_file=$(find "$stack" -maxdepth 1 -name "*.yml" -o -name "*.yaml" | head -n 1)
+          if [ -n "$stack_file" ]; then
+            echo "Deploying $stack using $stack_file"
+            docker stack deploy -c "$stack_file" "$stack"
+            echo "Stack $stack deployed"
+            sleep 3
+          else
+            echo "No stack file found for $stack"
+          fi
+        else
+          echo "Directory $stack not found"
+        fi
+      done
+    
+    - echo "DevOps stacks deployment completed"
+
+deploy-security-stacks:
+  stage: deploy
+  image: docker:latest
+  services:
+    - docker:dind
+  variables:
+    DOCKER_TLS_CERTDIR: "/certs"
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+  needs:
+    - job: deploy-devops-stacks
+  script:
+    - echo "Deploying Security stacks"
+    
+    # Deploy Security stacks
+    - |
+      SECURITY_STACKS="vault passbolt"
+      
+      for stack in $SECURITY_STACKS; do
+        if [ -d "$stack" ]; then
+          stack_file=$(find "$stack" -maxdepth 1 -name "*.yml" -o -name "*.yaml" | head -n 1)
+          if [ -n "$stack_file" ]; then
+            echo "Deploying $stack using $stack_file"
+            docker stack deploy -c "$stack_file" "$stack"
+            echo "Stack $stack deployed"
+            sleep 5
+          else
+            echo "No stack file found for $stack"
+          fi
+        else
+          echo "Directory $stack not found"
+        fi
+      done
+    
+    - echo "Security stacks deployment completed"
+
+health-check:
+  stage: deploy
+  image: docker:latest
+  services:
+    - docker:dind
+  variables:
+    DOCKER_TLS_CERTDIR: "/certs"
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+  needs:
+    - job: deploy-security-stacks
+  script:
+    - echo "Performing health checks"
+    
+    # Wait for services to be ready
+    - |
+      echo "Waiting for services to be ready"
+      sleep 30
+    
+    # Check stack status
+    - |
+      echo "Current stack status:"
+      docker stack ls
+      echo ""
+      echo "Service status:"
+      docker service ls
+      echo ""
+      echo "Container status:"
+      docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+    
+    # Health check for key services
+    - |
+      echo "Performing health checks"
+      
+      # Check if Traefik is responding
+      timeout 30 sh -c 'until curl -f http://localhost:80 2>/dev/null; do sleep 2; done' && echo "Traefik is responding" || echo "Traefik health check failed"
+      
+      # Check Docker services
+      failed_services=$(docker service ls --filter "desired-state=running" --format "{{.Name}} {{.Replicas}}" | grep "0/" | wc -l)
+      if [ "$failed_services" -eq 0 ]; then
+        echo "All services are running"
+      else
+        echo "Some services failed to start:"
+        docker service ls --filter "desired-state=running" --format "{{.Name}} {{.Replicas}}" | grep "0/" || echo "No failed services found"
+      fi
+    
+    # Generate deployment summary
+    - |
+      total_stacks=$(docker stack ls --format "{{.Name}}" | wc -l)
+      total_services=$(docker service ls --format "{{.Name}}" | wc -l)
+      running_services=$(docker service ls --filter "desired-state=running" --format "{{.Name}} {{.Replicas}}" | grep -v "0/" | wc -l || echo "0")
+      
+      echo "Deployment Summary:"
+      echo "Total stacks: $total_stacks"
+      echo "Total services: $total_services"
+      echo "Running services: $running_services"
+      
+      # Save summary for notifications
+      echo "TOTAL_STACKS=$total_stacks" > deployment-summary.env
+      echo "TOTAL_SERVICES=$total_services" >> deployment-summary.env
+      echo "RUNNING_SERVICES=$running_services" >> deployment-summary.env
+    
+    - echo "Health check completed"
+  artifacts:
+    reports:
+      dotenv: deployment-summary.env
+    paths:
+      - deployment-summary.env
+    expire_in: 1 hour

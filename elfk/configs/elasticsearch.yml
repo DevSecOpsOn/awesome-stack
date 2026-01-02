@@ -1,0 +1,56 @@
+# Elasticsearch Configuration
+# Best practices for production-ready setup
+
+# Cluster settings
+cluster.name: "docker-cluster"
+node.name: "elasticsearch-node-1"
+node.roles: ["master", "data", "ingest"]
+
+# Network settings
+network.host: 0.0.0.0
+http.port: 9200
+transport.port: 9300
+
+# Discovery settings for single node
+discovery.type: single-node
+
+# Path settings
+path.data: /usr/share/elasticsearch/data
+path.logs: /usr/share/elasticsearch/logs
+
+# Memory settings
+bootstrap.memory_lock: false
+
+# Security settings (disabled for development)
+xpack.security.enabled: false
+xpack.security.enrollment.enabled: false
+xpack.security.http.ssl.enabled: false
+xpack.security.transport.ssl.enabled: false
+
+# Monitoring settings
+xpack.monitoring.collection.enabled: true
+
+# Index settings
+action.auto_create_index: "+*"
+
+# Cluster settings
+cluster.max_shards_per_node: 3000
+
+# Performance settings
+indices.memory.index_buffer_size: 10%
+indices.memory.min_index_buffer_size: 48mb
+
+# Logging settings
+logger.level: INFO
+logger.org.elasticsearch.discovery: WARN
+
+# HTTP settings
+http.cors.enabled: true
+http.cors.allow-origin: "*"
+http.cors.allow-headers: "X-Requested-With,Content-Type,Content-Length,Authorization"
+
+# Watcher (disabled for development)
+xpack.watcher.enabled: false
+
+# Machine learning (disabled for development)
+xpack.ml.enabled: false

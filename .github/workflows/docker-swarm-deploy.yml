@@ -1,0 +1,44 @@
+name: Docker Swarm Deploy - Main Orchestrator
+
+on:
+  pull_request:
+    branches: [master, main]
+    types: [opened, synchronize, reopened]
+  workflow_dispatch:
+    inputs:
+      stack_type:
+        description: "Stack type to deploy"
+        required: true
+        default: "devops"
+        type: choice
+        options:
+          - base_stack
+          - devops
+          - devsecops
+
+jobs:
+  security-scan:
+    uses: ./.github/workflows/security-scan.yml
+    secrets: inherit
+
+  validate-stacks:
+    uses: ./.github/workflows/validate-stacks.yml
+    needs: security-scan
+
+  deploy:
+    uses: ./.github/workflows/deploy-swarm.yml
+    needs: [security-scan, validate-stacks]
+    with:
+      stack_type: ${{ github.event.inputs.stack_type || 'devsecops' }}
+    secrets: inherit
+
+  post-deployment:
+    uses: ./.github/workflows/post-deployment.yml
+    needs: [security-scan, validate-stacks, deploy]
+    if: github.event_name == 'pull_request'
+    with:
+      security_results: ${{ needs.security-scan.outputs.scan-results }}
+      validation_results: ${{ needs.validate-stacks.outputs.validation-results }}
+      swarm_status: ${{ needs.deploy.outputs.swarm-status }}
+      deployment_results: ${{ needs.deploy.outputs.deployment-results }}
+    secrets: inherit

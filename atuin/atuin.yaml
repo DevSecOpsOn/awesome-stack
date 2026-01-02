@@ -1,0 +1,46 @@
+version: "3.9"
+
+services:
+
+  server:
+    image: ghcr.io/atuinsh/atuin:latest
+    deploy:
+      labels:
+        - traefik.enable=true
+        - traefik.swarm.lbswarm=false
+        - traefik.swarm.network=docker2docker
+        - traefik.http.routers.atuin_server.entrypoints=web,websecure
+        - traefik.http.routers.atuin_server.rule=Host(`atuin.docker.local`)
+        - traefik.http.services.atuin_server.loadbalancer.server.port=8888
+        - traefik.consulcatalog.connect=true
+        - sablier.enable=true
+        - sablier.group=devsecops
+      mode: replicated
+      replicas: 1
+      endpoint_mode: vip
+      update_config:
+        parallelism: 1
+        delay: 10s
+      restart_policy:
+        condition: any
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 500M
+    environment:
+      ATUIN_HOST: "0.0.0.0"
+      ATUIN_OPEN_REGISTRATION: "true"
+      ATUIN_DB_URI: postgres://root:${DOCKER_SECRET_DB}@db_postgres:5432/atuin?sslmode=disable
+      RUST_LOG: "info,atuin_server=debug"
+    command: server start
+    volumes:
+      - ./config:/config:rw
+    # This is the port where Atuin listens for HTTP requests
+    ports:
+      - 8888:8888
+    networks:
+      - docker2docker
+
+networks:
+  docker2docker:
+    external: true

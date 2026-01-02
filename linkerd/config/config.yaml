@@ -1,0 +1,48 @@
+admin:
+  ip: 0.0.0.0
+  port: 9990
+
+routers:
+- protocol: http
+  dtab: /svc => /$/inet/127.1/9990;
+  servers:
+  - port: 8080
+    ip: 0.0.0.0
+
+- protocol: http
+  label: /http-consul
+  service:
+    responseClassifier:
+      kind: io.l5d.http.retryableIdempotent5XX
+  identifier:
+   kind: io.l5d.path
+   segments: 1
+   consume: true
+  dtab: |
+    /consul => /#/io.l5d.consul/dc1;
+  servers:
+  - port: 8500
+    ip: 0.0.0.0
+  client:
+   requeueBudget:
+     percentCanRetry: 5.0
+
+namers:
+- kind: io.l5d.consul
+  host: 0.0.0.0
+  port: 8500
+  includeTag: true
+  useHealthCheck: false
+  healthStatuses:
+    - "passing"
+    - "warning"
+  setHost: true
+  consistencyMode: stale
+
+telemetry:
+- kind: io.l5d.prometheus
+  path: /admin/metrics/prometheus
+  prefix: linkerd_prod
+
+usage:
+  orgId: docker.local

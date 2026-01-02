@@ -1,0 +1,187 @@
+version: '3.6'
+
+services:
+
+  adminer:
+    image: adminer:standalone
+    deploy:
+      labels:
+        - traefik.enable=true
+        - traefik.swarm.lbswarm=false
+        - traefik.swarm.network=docker2docker
+        - traefik.http.routers.adminer_ui.entrypoints=web,websecure
+        - traefik.http.routers.adminer_ui.rule=Host(`adminer.docker.local`)
+        - traefik.http.services.adminer_ui.loadbalancer.server.port=8080
+        - traefik.consulcatalog.connect=true
+        - SERVICE_IGNORE=false
+      replicas: 1
+      mode: replicated
+      endpoint_mode: vip
+      update_config:
+        parallelism: 1
+        delay: 10s
+      restart_policy:
+          condition: any
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 500M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "200k"
+        max-file: "10"
+    environment:
+      SERVICE_NAME: adminer
+      SERVICE_TAGS: dbs,admin
+    networks:
+      - docker2docker
+
+  mongo:
+    image: mongo
+    deploy:
+      labels:
+        - traefik.enable=false
+        - traefik.swarm.network=docker2docker
+        - traefik.swarm.lbswarm=false
+        - traefik.http.routers.mongodb.entrypoints=web,websecure
+        - traefik.http.routers.mongodb.rule=Host(`mongodb.docker.local`)
+        - traefik.http.services.mongodb.loadbalancer.server.port=27017
+        - traefik.consulcatalog.connect=true
+        - sablier.enable=true
+        - sablier.group=databases
+      mode: replicated
+      replicas: 1
+      update_config:
+        parallelism: 1
+        delay: 10s
+      restart_policy:
+        condition: any
+      resources:
+        limits:
+            memory: 2G
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "200k"
+        max-file: "10"
+    environment:
+      SERVICE_NAME: mongo
+      SERVICE_TAG: db, mongodb
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: ${DOCKER_SECRET_DB}
+    networks:
+      - docker2docker
+
+  mongo-express:
+    image: mongo-express
+    deploy:
+      labels:
+        - traefik.enable=true
+        - traefik.swarm.lbswarm=false
+        - traefik.swarm.network=docker2docker
+        - traefik.http.routers.mongo_express_ui.entrypoints=web,websecure
+        - traefik.http.routers.mongo_express_ui.rule=Host(`mongo-express.docker.local`)
+        - traefik.http.services.mongo_express_ui.loadbalancer.server.port=8081
+        - traefik.consulcatalog.connect=true
+        - sablier.enable=true
+        - sablier.group=databases
+      replicas: 1
+      mode: replicated
+      endpoint_mode: vip
+      update_config:
+        parallelism: 1
+        delay: 10s
+      restart_policy:
+          condition: any
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 500M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "200k"
+        max-file: "10"
+    environment:
+      SERVICE_NAME: mongo-express
+      SERVICE_TAGS: dbs,admin,mongodb
+      ME_CONFIG_MONGODB_ADMINUSERNAME: root
+      ME_CONFIG_MONGODB_ADMINPASSWORD: ${DOCKER_SECRET_DB}
+      ME_CONFIG_MONGODB_URL: mongodb://root:${DOCKER_SECRET_DB}@mongo:27017/
+      ME_CONFIG_BASICAUTH: false
+    networks:
+      - docker2docker
+
+  mysql:
+    image: mysql:oracle
+    deploy:
+      labels:
+        - traefik.enable=false
+        - sablier.enable=true
+        - sablier.group=databases
+      replicas: 1
+      update_config:
+        parallelism: 1
+        delay: 10s
+      restart_policy:
+        condition: any
+        delay: 5s
+        window: 120s
+      resources:
+        limits:
+          memory: 1G
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "200k"
+        max-file: "10"
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DOCKER_SECRET_DB}
+      MYSQL_ROOT_HOST: '%'
+    command: --bind-address=0.0.0.0
+    # Uncomment this if you want to expose the MySQL port
+    # ports:
+    #   - 3306
+    networks:
+      - docker2docker
+
+  postgres:
+    image: postgres:14.18
+    deploy:
+      labels:
+        - traefik.enable=false
+        - sablier.enable=true
+        - sablier.group=databases
+      replicas: 1
+      update_config:
+          parallelism: 1
+          delay: 10s
+      restart_policy:
+        condition: any
+        delay: 5s
+        window: 120s
+      resources:
+        limits:
+          memory: 1G
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "200k"
+        max-file: "10"
+    environment:
+      - POSTGRES_USER=root
+      - POSTGRES_HOST_AUTH_METHOD="trust"
+      - POSTGRES_PASSWORD=${DOCKER_SECRET_DB}
+    volumes:
+      # Script to create required databases on start up process
+      - ./scripts/init-user-db.sh:/docker-entrypoint-initdb.d/init-user-db.sh:rw
+    # Uncomment this if you want to expose the PostgreSQL port
+    # ports:
+    #   - 5432
+    networks:
+      - docker2docker
+
+networks:
+  docker2docker:
+      external: true

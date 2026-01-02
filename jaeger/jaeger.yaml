@@ -1,0 +1,102 @@
+version: "3.9"
+
+services:
+
+  jaeger-all-in-one:
+    image: jaegertracing/all-in-one:latest
+    deploy:
+      labels:
+        - traefik.enable=true
+        - traefik.swarm.lbswarm=false
+        - traefik.swarm.network=docker2docker
+        - traefik.http.routers.jaeger_ui.entrypoints=web,websecure
+        - traefik.http.routers.jaeger_ui.rule=Host(`jaeger.docker.local`)
+        - traefik.http.services.jaeger_ui.loadbalancer.server.port=16686
+        - traefik.consulcatalog.connect=true
+      replicas: 1
+      mode: replicated
+      update_config:
+        parallelism: 1
+        delay: 10s
+        failure_action: rollback
+        order: stop-first
+      restart_policy:
+        condition: any
+        delay: 5s
+        window: 10s
+      endpoint_mode: vip
+      resources:
+        limits:
+          memory: 1G
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "200k"
+        max-file: "10"
+    environment:
+      SERVICE_NAME: jaeger
+      SERVICE_TAGS: tracing,observability
+      COLLECTOR_ZIPKIN_HOST_PORT: ":9411"
+      COLLECTOR_OTLP_ENABLED: "true"
+      SPAN_STORAGE_TYPE: memory
+      MEMORY_MAX_TRACES: 50000
+    # ports:
+    #   - "5775:5775/udp"   # accept zipkin.thrift over compact thrift protocol (deprecated, used by legacy clients only)
+    #   - "6831:6831/udp"   # accept jaeger.thrift over compact thrift protocol
+    #   - "6832:6832/udp"   # accept jaeger.thrift over binary thrift protocol
+    #   - "5778:5778"       # serve configs
+    #   - "16686:16686"     # serve frontend
+    #   - "14268:14268"     # accept jaeger.thrift directly from clients
+    #   - "14250:14250"     # accept model.proto
+    #   - "9411:9411"       # Zipkin compatible endpoint (optional)
+    #   - "4317:4317"       # OTLP gRPC receiver
+    #   - "4318:4318"       # OTLP HTTP receiver
+    networks:
+      - docker2docker
+
+  jaeger-query:
+    image: jaegertracing/jaeger-query:latest
+    deploy:
+      labels:
+        - traefik.enable=true
+        - traefik.swarm.lbswarm=false
+        - traefik.swarm.network=docker2docker
+        - traefik.http.routers.jaeger_query.entrypoints=web,websecure
+        - traefik.http.routers.jaeger_query.rule=Host(`jaeger-query.docker.local`)
+        - traefik.http.services.jaeger_query.loadbalancer.server.port=16686
+        - traefik.consulcatalog.connect=true
+      replicas: 1
+      mode: replicated
+      update_config:
+        parallelism: 1
+        delay: 10s
+        failure_action: rollback
+        order: stop-first
+      restart_policy:
+        condition: any
+        delay: 5s
+        window: 10s
+      endpoint_mode: vip
+      resources:
+        limits:
+          memory: 512M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "200k"
+        max-file: "10"
+    environment:
+      SERVICE_NAME: jaeger-query
+      SERVICE_TAGS: tracing,query
+      SPAN_STORAGE_TYPE: memory
+      JAEGER_AGENT_HOST: jaeger-all-in-one
+    depends_on:
+      - jaeger-all-in-one
+    # ports:
+    #   - "16687:16686"
+    networks:
+      - docker2docker
+
+networks:
+  docker2docker:
+    external: true

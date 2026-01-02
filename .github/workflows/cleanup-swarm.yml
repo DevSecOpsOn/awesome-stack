@@ -1,0 +1,133 @@
+name: Cleanup Docker Swarm
+
+on:
+  workflow_dispatch:
+    inputs:
+      cleanup_type:
+        description: 'Type of cleanup to perform'
+        required: true
+        default: 'partial'
+        type: choice
+        options:
+          - partial    # Remove non-essential stacks
+          - full       # Remove all stacks
+          - resources  # Only prune resources
+      force_cleanup:
+        description: 'Force cleanup without confirmation'
+        required: false
+        default: false
+        type: boolean
+
+env:
+  DOCKER_BUILDKIT: 1
+
+jobs:
+  cleanup:
+    name: Cleanup Docker Resources
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Partial cleanup
+        if: inputs.cleanup_type == 'partial'
+        run: |
+          echo "🧹 Performing partial cleanup..."
+          
+          # Remove DevOps and Security stacks (keep base infrastructure)
+          CLEANUP_STACKS="redis atuin gitea harness gogs runatlantis homarr portainer beszel prometheus grafana fluentbit jaeger otelcol consul localstack watchtower minio vault passbolt"
+          
+          for stack in $CLEANUP_STACKS; do
+            if docker stack ls --format "{{.Name}}" | grep -q "^${stack}$"; then
+              echo "Removing stack: $stack"
+              docker stack rm "$stack"
+            else
+              echo "Stack $stack not found, skipping"
+            fi
+          done
+          
+          echo "✅ Partial cleanup completed"
+
+      - name: Full cleanup
+        if: inputs.cleanup_type == 'full'
+        run: |
+          echo "🧹 Performing full cleanup..."
+          
+          # Remove all stacks
+          ALL_STACKS=$(docker stack ls --format "{{.Name}}" | grep -v "NAME")
+          
+          if [ -n "$ALL_STACKS" ]; then
+            echo "Removing all stacks: $ALL_STACKS"
+            echo "$ALL_STACKS" | xargs -r docker stack rm
+          else
+            echo "No stacks found to remove"
+          fi
+          
+          echo "✅ Full cleanup completed"
+
+      - name: Resource cleanup
+        run: |
+          echo "🧹 Cleaning up Docker resources..."
+          
+          # Wait for stack removal to complete
+          if [ "${{ inputs.cleanup_type }}" != "resources" ]; then
+            echo "⏳ Waiting for stack removal to complete..."
+            sleep 20
+          fi
+          
+          # Prune unused resources
+          echo "Pruning unused containers..."
+          docker container prune -f
+          
+          echo "Pruning unused images..."
+          docker image prune -f
+          
+          echo "Pruning unused volumes..."
+          docker volume prune -f
+          
+          echo "Pruning unused networks..."
+          docker network prune -f
+          
+          # System-wide prune
+          echo "Performing system prune..."
+          docker system prune -f
+          
+          echo "✅ Resource cleanup completed"
+
+      - name: Reset Docker Swarm
+        if: inputs.cleanup_type == 'full' && inputs.force_cleanup
+        run: |
+          echo "🔄 Resetting Docker Swarm..."
+          
+          # Leave swarm (this will remove all swarm-specific resources)
+          docker swarm leave --force 2>/dev/null || echo "Not in swarm mode or already left"
+          
+          echo "✅ Docker Swarm reset completed"
+
+      - name: Final status report
+        run: |
+          echo "📊 Final Docker status after cleanup:"
+          echo ""
+          echo "Stacks:"
+          docker stack ls || echo "No stacks running"
+          echo ""
+          echo "Services:"
+          docker service ls || echo "No services running"
+          echo ""
+          echo "Containers:"
+          docker ps -a --format "table {{.Names}}\t{{.Status}}\t{{.Image}}"
+          echo ""
+          echo "Networks:"
+          docker network ls
+          echo ""
+          echo "Volumes:"
+          docker volume ls
+          echo ""
+          echo "Images:"
+          docker images --format "table {{.Repository}}\t{{.Tag}}\t{{.Size}}"
+          echo ""
+          echo "System info:"
+          docker system df
+          echo ""
+          echo "✅ Cleanup workflow completed successfully"

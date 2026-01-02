@@ -1,0 +1,53 @@
+version: '3.9'
+
+services:
+
+  server:
+    image: hashicorp/vault:1.20
+    cap_add:
+      - IPC_LOCK
+    deploy:
+      labels:
+        - traefik.enable=true
+        - traefik.swarm.lbswarm=false
+        - traefik.swarm.network=docker2docker
+        - traefik.http.routers.vault_server.entrypoints=web,websecure
+        - traefik.http.routers.vault_server.rule=Host(`vault.docker.local`)
+        - traefik.http.services.vault_server.loadbalancer.server.port=8200
+        - traefik.consulcatalog.connect=true
+      replicas: 1
+      mode: replicated
+      endpoint_mode: vip
+      update_config:
+        parallelism: 1
+        failure_action: rollback
+        delay: 30s
+      restart_policy:
+        condition: any
+        delay: 5s
+        window: 120s
+      resources:
+        limits:
+          memory: 2G
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "200k"
+        max-file: "10"
+    working_dir: /vault/config/
+    environment:
+      # VAULT_ADDR: http://server:8200
+      VAULT_ROOT_TOKEN_ID: protectme
+      SERVICE_NAME: vault
+      SERVICE_TAGS: vault, seal, encrypt
+    # ports:
+    #   - 8200:8200
+    volumes:
+      - ./config/:/vault/config/:rw
+    command: "vault server -config /vault/config/"
+    networks:
+      - docker2docker
+
+networks:
+  docker2docker:
+      external: true

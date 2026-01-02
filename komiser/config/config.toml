@@ -1,0 +1,81 @@
+# Komiser Configuration File
+# Documentation: https://docs.komiser.io/
+
+# Database configuration
+[postgres]
+uri = "postgres://postgres:${DOCKER_SECRET_DB}@db_postgres:5432/komiser?sslmode=disable"
+
+# SQLite configuration (alternative to PostgreSQL)
+# [sqlite]
+# file = "/tmp/komiser/komiser.db"
+
+# AWS Configuration
+[[aws]]
+name = "aws-account"
+source = "CREDENTIALS_FILE"
+path = "~/.aws/credentials"
+profile = "default"
+# Uncomment and configure for specific regions
+# regions = ["us-east-1", "us-west-2", "eu-west-1"]
+
+# Azure Configuration (uncomment to enable)
+# [[azure]]
+# name = "azure-subscription"
+# source = "ENVIRONMENT_VARIABLES"
+# subscription_id = "your-subscription-id"
+# tenant_id = "your-tenant-id"
+# client_id = "your-client-id"
+# client_secret = "your-client-secret"
+
+# Google Cloud Configuration (uncomment to enable)
+# [[gcp]]
+# name = "gcp-project"
+# source = "SERVICE_ACCOUNT_JSON"
+# path = "/path/to/service-account.json"
+# project_id = "your-project-id"
+
+# DigitalOcean Configuration (uncomment to enable)
+# [[digitalocean]]
+# name = "digitalocean-account"
+# token = "your-do-token"
+
+# Kubernetes Configuration (uncomment to enable)
+# [[kubernetes]]
+# name = "k8s-cluster"
+# source = "KUBECONFIG"
+# path = "~/.kube/config"
+
+# Monitoring and Alerting
+[telemetry]
+enabled = true
+
+# Web UI Configuration
+[ui]
+# Custom branding (optional)
+# logo = "/path/to/logo.png"
+# favicon = "/path/to/favicon.ico"
+
+# Security Configuration
+[security]
+# Enable HTTPS (when behind reverse proxy)
+# tls_cert = "/path/to/cert.pem"
+# tls_key = "/path/to/key.pem"
+
+# CORS settings
+cors_origins = ["http://komiser.docker.local", "https://komiser.docker.local"]
+
+# Logging Configuration
+[logging]
+level = "info"
+format = "json"
+
+# Cache Configuration
+[cache]
+# Redis cache (optional)
+# redis_url = "redis://redis_server:6379"
+# ttl = 3600
+
+# Webhook Configuration (optional)
+# [webhook]
+# url = "https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK"
+# secret = "your-webhook-secret"

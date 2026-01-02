@@ -1,0 +1,60 @@
+version: "3.9"
+
+services:
+  homarr:
+    image: ghcr.io/homarr-labs/homarr:latest
+    deploy:
+      labels:
+        - traefik.enable=true
+        - traefik.swarm.lbswarm=false
+        - traefik.swarm.network=docker2docker
+        - traefik.http.routers.homarr_server.entrypoints=web,websecure
+        - traefik.http.routers.homarr_server.rule=Host(`devsecopson.docker.local`)
+        - traefik.http.services.homarr_server.loadbalancer.server.port=7575
+        - traefik.consulcatalog.connect=true
+      replicas: 1
+      endpoint_mode: vip
+      update_config:
+        parallelism: 1
+        delay: 10s
+      restart_policy:
+        condition: any
+        delay: 5s
+        window: 120s
+      resources:
+        limits:
+          memory: 1G
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "200k"
+        max-file: "10"
+    environment:
+      # <--- can be generated with `openssl rand -hex 32`
+      SECRET_ENCRYPTION_KEY: ${HOMARR_SECRET_KEY}
+      # <--- Uncomment below line for a fresh installation ---->
+      # DB_DRIVER: "node-postgres"
+      # DB_DIALECT: postgresql
+      # DB_URL: "postgresql://root:${DOCKER_SECRET_DB}@db_postgres:5432/homarr?sslmode=disable"
+      # REDIS_IS_EXTERNAL: "true"
+      # REDIS_HOST: "redis_server"
+      # REDIS_PORT: "6379"
+      # REDIS_USERNAME: "default"
+      # REDIS_PASSWORD: ${DOCKER_SECRET_DB}
+      # REDIS_DATABASE_INDEX: "2"
+    # ports:
+    #   - '7575:7575'
+    volumes:
+      # Optional, only if you want docker integration
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./data:/appdata:rw
+    networks:
+      - docker2docker
+
+volumes:
+  homarr:
+    driver: local
+
+networks:
+  docker2docker:
+    external: true

@@ -1,0 +1,47 @@
+version: '3'
+
+services:
+
+  haproxy:
+    image: haproxy
+    deploy:
+      labels:
+        - traefik.enable=true
+        - traefik.swarm.network=docker2docker
+        - traefik.swarm.lbswarm=false
+        - traefik.http.routers.haproxy_server.entrypoints=web,websecure
+        - traefik.http.routers.haproxy_server.rule=Host(`haproxy.docker.local`)
+        - traefik.http.services.haproxy_server.loadbalancer.server.port=80
+        - traefik.consulcatalog.connect=true
+        - sablier.enable=true
+        - sablier.group=devsecops
+      mode: replicated
+      replicas: 1
+      placement:
+        max_replicas_per_node: 1
+      update_config:
+        parallelism: 1
+        delay: 10s
+      restart_policy:
+        condition: any
+      resources:
+        limits:
+          cpus: '1'
+          memory: 500M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "200k"
+        max-file: "10"
+    # environment:
+      HAPROXY_CFG: "/etc/haproxy/haproxy.cfg"
+    volumes:
+      - ./config/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:rw
+    # ports:
+    #   - "8008:80"
+    networks:
+      - docker2docker
+
+networks:
+  docker2docker:
+    external: true

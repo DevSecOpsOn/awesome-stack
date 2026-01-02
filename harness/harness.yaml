@@ -1,0 +1,57 @@
+version: "3.9"
+
+services:
+
+  server:
+    image: harness/harness:3.2.0
+    deploy:
+      labels:
+        - traefik.enable=true
+        - traefik.swarm.lbswarm=false
+        - traefik.swarm.network=docker2docker
+        - traefik.http.routers.harness_server.entrypoints=web,websecure
+        - traefik.http.routers.harness_server.rule=Host(`harness.docker.local`)
+        - traefik.http.services.harness_server.loadbalancer.server.port=3000
+        - traefik.consulcatalog.connect=true
+        - sablier.enable=true
+        - sablier.group=devsecops
+      mode: replicated
+      replicas: 1
+      endpoint_mode: vip
+      update_config:
+        parallelism: 1
+        delay: 10s
+      restart_policy:
+        condition: any
+        delay: 5s
+        window: 120s
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 500M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "200k"
+        max-file: "10"
+    environment:
+      GITNESS_PRINCIPAL_ADMIN_PASSWORD: ${DOCKER_SECRET_DB}
+      GITNESS_DATABASE_DATASOURCE: "postgres://root:${DOCKER_SECRET_DB}@db_postgres:5432/harness?sslmode=disable"
+    env_file:
+      - ./env/settings.env
+    # ports:
+      # - 3000:3000
+    #   - 3022:3022
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - harness-data:/data
+    networks:
+      - docker2docker
+
+volumes:
+  harness-data:
+    driver: local
+
+networks:
+  docker2docker:
+    external: true

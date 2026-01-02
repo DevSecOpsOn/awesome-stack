@@ -1,0 +1,55 @@
+pipeline {
+
+    agent {
+        docker
+    }
+
+    stages {
+
+        stage("Pull Docker Images") {
+            agent {
+                docker {
+                    image 'python:latest'
+                    image 'java'
+                }
+            }
+            steps {
+                echo "Docker images pulled"
+            }
+        }
+
+        stage("Tests") {
+            steps {
+                echo "Make tests"
+                sh "make test"
+            }
+            post {
+                always {
+                    junit 'test-reports/results.xml'
+                }
+            }
+        }
+
+        stage("Building") {
+            steps {
+                echo 'Building application ...'
+                sh 'make libs'
+                sh 'make clean all'
+                echo 'Application builded'
+            }
+
+        }
+        stage('Deploy to Acceptance') {
+            when {
+                expression {
+                    currentBuild.result == null || currentBuild.result == 'SUCCESS'
+                }
+            }
+                steps {
+                    sh 'docker stack deploy -c stack.yml app'
+                }
+        }
+
+    }
+
+}

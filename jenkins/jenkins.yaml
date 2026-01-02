@@ -1,0 +1,45 @@
+version: '3.9'
+
+services:
+
+  jenkins:
+    image: jenkins/jenkins:jdk21
+    restart: always
+    deploy:
+      labels:
+        - traefik.enable=true
+        - traefik.swarm.network=docker2docker
+        - traefik.swarm.lbswarm=false
+        - traefik.http.routers.jenkins_server.entrypoints=web,websecure
+        - traefik.http.routers.jenkins_server.rule=Host(`jenkins.docker.local`)
+        - traefik.http.services.jenkins_server.loadbalancer.server.port=8080
+        - traefik.consulcatalog.connect=true
+        - sablier.enable=true
+        - sablier.group=devsecops
+      mode: replicated
+      replicas: 1
+      update_config:
+        parallelism: 1
+        delay: 10s
+      restart_policy:
+        condition: any
+      resources:
+        limits:
+            memory: 2G
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "200k"
+        max-file: "10"
+    environment:
+        SERVICE_NAME: jenkins
+        SERVICE_TAGS: ci,cd,deploy
+    # ports:
+    #   - "8080:8080"
+    #   - "50000:50000"
+    networks:
+      - docker2docker
+
+networks:
+  docker2docker:
+      external: true

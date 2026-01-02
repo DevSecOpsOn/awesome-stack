@@ -1,0 +1,59 @@
+version: '3.9'
+
+services:
+
+  fluentbit:
+    image: fluent/fluent-bit:latest
+    deploy:
+      labels:
+        - traefik.enable=true
+        - traefik.swarm.lbswarm=false
+        - traefik.swarm.network=docker2docker
+        - traefik.http.routers.fluentbit_server.entrypoints=web,websecure
+        - traefik.http.routers.fluentbit_server.rule=Host(`fluentbit.docker.local`)
+        - traefik.http.services.fluentbit_server.loadbalancer.server.port=2020
+        - traefik.consulcatalog.connect=true
+        - sablier.enable=true
+        - sablier.group=devsecops
+      replicas: 1
+      mode: replicated
+      update_config:
+        parallelism: 1
+        delay: 10s
+      restart_policy:
+        condition: any
+      endpoint_mode: vip
+      resources:
+        limits:
+          memory: 1G
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "200k"
+        max-file: "10"
+    env_file:
+      - ./.env/settings.env
+    environment:
+      - CONSUL_HTTP_ADDR="http://consul_server:8500"
+      - CONSUL_HTTP_TOKEN="${CONSUL_HTTP_TOKEN}"
+    command: >
+      /fluent-bit/bin/fluent-bit
+      -c /fluent-bit/etc/fluent-bit.yaml
+    # ports:
+    #   - 2020:2020
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./config/fluent-bit.yaml:/fluent-bit/etc/fluent-bit.yaml:rw
+      - fluentbit_data:/fluent-bit/state
+      # Uncooment if you running on Linux OS
+      # - /var/lib/docker/containers:/var/lib/docker/containers:ro
+    networks:
+      - docker2docker
+
+networks:
+  docker2docker:
+    external: true
+
+volumes:
+  fluentbit_data:
+    driver: local

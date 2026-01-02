@@ -1,0 +1,77 @@
+global:
+  smtp_smarthost: "localhost:587"
+  smtp_from: "alertmanager@docker.local"
+  slack_api_url_file: "/run/secrets/SLACK_ALERTS_HOOK"
+  resolve_timeout: 5m
+
+route:
+  receiver: 'slack-alerts'
+  group_by: ['alertname']
+  group_wait: 30s
+  group_interval: 1m
+  repeat_interval: 5m
+  routes:
+  - receiver: 'slack-health-check'
+    match:
+      severity: info
+    group_wait: 30s
+    group_interval: 1m
+    repeat_interval: 1m
+
+  - receiver: 'slack-alerts'
+    group_wait: 30s
+    group_interval: 1m
+    repeat_interval: 2m
+    match:
+      severity: critical
+    mute_time_intervals:
+    - offhours
+
+time_intervals:
+- name: offhours
+  time_intervals:
+  - times:
+    - start_time: "00:00"
+      end_time: "10:00"
+    weekdays: ['saturday','sunday']
+    location: Europe/Paris
+
+receivers:
+
+  - name: "slack-alerts"
+    slack_configs:
+      - channel: "#alerts"
+        title: "Docker::Swarm - Stack Alert"
+        text: |
+          {{ range .Alerts }}
+          *Alert:* {{ .Annotations.summary }}
+          *Description:* {{ .Annotations.description }}
+          *Severity:* {{ .Labels.severity }}
+          *Node:* {{ .Labels.service }}
+          *Service:* {{ .Labels.job }}
+          *Instance:* {{ .Labels.instance }}
+          *Stack:* {{ .Labels.stack_name }}
+          *Last check:* {{ .StartsAt.Format "2006-01-02 15:04:05 UTC" }}
+          {{ end }}
+        send_resolved: true
+        color: '{{ if eq .Status "firing" }}danger{{ else }}good{{ end }}'
+
+  - name: "slack-health-check"
+    slack_configs:
+      - channel: "#alerts"
+        title: "✅ Docker::Swarm - Health Check"
+        text: |
+          {{ range .Alerts }}
+          🟢 *{{ .Annotations.summary }}*
+          📊 {{ .Annotations.description }}
+          🕐 Last check: {{ .StartsAt.Format "2006-01-02 15:04:05 UTC" }}
+          {{ end }}
+        send_resolved: false
+        color: "good"
+
+inhibit_rules:
+  - source_matchers:
+      - severity="critical"
+    target_matchers:
+      - severity="warning"
+    equal: ['alertname', 'cluster']

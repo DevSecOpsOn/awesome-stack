@@ -1,0 +1,101 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+  jaeger:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:14250
+      thrift_http:
+        endpoint: 0.0.0.0:14268
+      thrift_compact:
+        endpoint: 0.0.0.0:6831
+      thrift_binary:
+        endpoint: 0.0.0.0:6832
+
+  zipkin:
+    endpoint: 0.0.0.0:9411
+
+  prometheus:
+    config:
+      scrape_configs:
+        - job_name: 'otelcol'
+          scrape_interval: 10s
+          static_configs:
+            - targets: ['0.0.0.0:8888']
+
+processors:
+  batch:
+    timeout: 1s
+    send_batch_size: 1024
+
+  memory_limiter:
+    limit_mib: 512
+    check_interval: 1s
+
+  resource:
+    attributes:
+      - key: service.name
+        from_attribute: service_name
+        action: insert
+      - key: service.version
+        from_attribute: service_version
+        action: insert
+
+exporters:
+  # Traces
+  otlp/tempo:
+    endpoint: http://grafana_tempo:4317
+    tls:
+      insecure: true
+
+  # Metrics
+  prometheus:
+    endpoint: "0.0.0.0:8889"
+    const_labels:
+      cluster: docker-swarm
+
+  otlphttp/prometheus:
+    endpoint: http://prometheus_prometheus:9090/api/v1/otlp
+    tls:
+      insecure: true
+
+  # Logs - using debug exporter since loki exporter is not available
+  debug:
+    verbosity: detailed
+
+extensions:
+  health_check:
+    endpoint: 0.0.0.0:13133
+
+  pprof:
+    endpoint: 0.0.0.0:1888
+
+  zpages:
+    endpoint: 0.0.0.0:55679
+
+service:
+  extensions: [health_check, pprof, zpages]
+  pipelines:
+    traces:
+      receivers: [otlp, jaeger, zipkin]
+      processors: [memory_limiter, resource, batch]
+      exporters: [otlp/tempo]
+
+    metrics:
+      receivers: [otlp, prometheus]
+      processors: [memory_limiter, resource, batch]
+      exporters: [prometheus, otlphttp/prometheus]
+
+    logs:
+      receivers: [otlp]
+      processors: [memory_limiter, resource, batch]
+      exporters: [debug]
+
+  telemetry:
+    logs:
+      level: "info"

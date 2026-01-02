@@ -1,0 +1,119 @@
+# Cleanup pipeline
+cleanup-resources:
+  stage: cleanup
+  image: docker:latest
+  services:
+    - docker:dind
+  variables:
+    DOCKER_TLS_CERTDIR: "/certs"
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      when: always
+  script:
+    - echo "Cleaning up Docker resources"
+    
+    # Remove non-essential stacks (keep base infrastructure for other tests)
+    - |
+      CLEANUP_STACKS="redis atuin gitea harness gogs runatlantis homarr portainer beszel prometheus grafana fluentbit jaeger otelcol consul localstack watchtower minio vault passbolt concourse"
+      
+      for stack in $CLEANUP_STACKS; do
+        if docker stack ls --format "{{.Name}}" | grep -q "^${stack}$"; then
+          echo "Removing stack: $stack"
+          docker stack rm "$stack"
+        else
+          echo "Stack $stack not found, skipping"
+        fi
+      done
+    
+    # Wait for cleanup
+    - |
+      echo "Waiting for stack cleanup"
+      sleep 15
+    
+    # Prune unused resources
+    - |
+      echo "Pruning unused resources"
+      docker system prune -f
+      docker volume prune -f
+    
+    # Final status
+    - |
+      echo "Final Docker status:"
+      echo "Remaining stacks:"
+      docker stack ls || echo "No stacks running"
+      echo ""
+      echo "Remaining services:"
+      docker service ls || echo "No services running"
+    
+    - echo "Cleanup completed"
+  allow_failure: true
+
+# Manual cleanup job for full resource cleanup
+manual-cleanup:
+  stage: cleanup
+  image: docker:latest
+  services:
+    - docker:dind
+  variables:
+    DOCKER_TLS_CERTDIR: "/certs"
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "web"
+      when: manual
+  script:
+    - echo "Performing full manual cleanup"
+    
+    # Remove all stacks
+    - |
+      ALL_STACKS=$(docker stack ls --format "{{.Name}}" | grep -v "NAME")
+      
+      if [ -n "$ALL_STACKS" ]; then
+        echo "Removing all stacks: $ALL_STACKS"
+        echo "$ALL_STACKS" | xargs -r docker stack rm
+      else
+        echo "No stacks found to remove"
+      fi
+    
+    # Wait for complete cleanup
+    - |
+      echo "Waiting for complete cleanup"
+      sleep 30
+    
+    # Full resource cleanup
+    - |
+      echo "Performing full resource cleanup"
+      docker container prune -f
+      docker image prune -f
+      docker volume prune -f
+      docker network prune -f
+      docker system prune -f
+    
+    # Reset Docker Swarm if needed
+    - |
+      if docker info | grep -q "Swarm: active"; then
+        echo "Leaving Docker Swarm"
+        docker swarm leave --force 2>/dev/null || echo "Failed to leave swarm"
+      fi
+    
+    # Final status report
+    - |
+      echo "Final status after full cleanup:"
+      echo "Stacks:"
+      docker stack ls || echo "No stacks running"
+      echo ""
+      echo "Services:"
+      docker service ls || echo "No services running"
+      echo ""
+      echo "Containers:"
+      docker ps -a --format "table {{.Names}}\t{{.Status}}\t{{.Image}}"
+      echo ""
+      echo "Networks:"
+      docker network ls
+      echo ""
+      echo "Volumes:"
+      docker volume ls
+      echo ""
+      echo "System info:"
+      docker system df
+    
+    - echo "Full cleanup completed"
+  allow_failure: true

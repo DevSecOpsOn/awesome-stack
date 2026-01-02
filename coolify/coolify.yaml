@@ -1,0 +1,93 @@
+version: "3.9"
+
+services:
+
+  coolify:
+    image: ghcr.io/coollabsio/coolify:latest
+    deploy:
+      labels:
+        - traefik.enable=true
+        - traefik.swarm.lbswarm=false
+        - traefik.swarm.network=docker2docker
+        - traefik.http.routers.coolify.entrypoints=web,websecure
+        - traefik.http.routers.coolify.rule=Host(`coolify.docker.local`)
+        - traefik.http.services.coolify.loadbalancer.server.port=8000
+        - traefik.consulcatalog.connect=true
+        - sablier.enable=true
+        - sablier.group=devsecops
+      mode: replicated
+      replicas: 1
+      endpoint_mode: vip
+      update_config:
+        parallelism: 1
+        delay: 10s
+        failure_action: rollback
+        order: stop-first
+      restart_policy:
+        condition: any
+        delay: 5s
+        window: 120s
+      resources:
+        limits:
+          memory: 2G
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "200k"
+        max-file: "10"
+    environment:
+      SERVICE_NAME: "coolify"
+      SERVICE_TAGS: "paas,deployment,selfhosted"
+      APP_ENV: "${APP_ENV:-production}"
+      APP_NAME: "Coolify"
+      APP_ID: "${COOLIFY_APP_ID:-coolify}"
+      APP_KEY: "${COOLIFY_APP_KEY}"
+      APP_URL: "http://coolify.docker.local"
+      APP_DEBUG: "true"
+      DB_DATABASE: "coolify"
+      DB_USERNAME: "root"
+      DB_PASSWORD: "${DOCKER_SECRET_DB}"
+      DB_HOST: "db_postgres"
+      DB_PORT: "5432"
+      REDIS_URL: "redis://default:${DOCKER_SECRET_DB}@redis_server:6379/2"
+      PUSHER_APP_ID: "${PUSHER_APP_ID:-your-app-id}"
+      PUSHER_APP_KEY: "${PUSHER_APP_KEY:-your-app-key}"
+      PUSHER_APP_SECRET: "${PUSHER_APP_SECRET:-your-app-secret}"
+      ROOT_USERNAME: "admin"
+      ROOT_USER_EMAIL: "rdgacarvalho@gmail.com"
+      ROOT_USER_PASSWORD: ${DOCKER_SECRET_DB}
+      REGISTRY_URL: "ghcr.io"
+      # PHP_MEMORY_LIMIT: "${PHP_MEMORY_LIMIT:-256M}"
+      # PHP_FPM_PM_CONTROL: "${PHP_FPM_PM_CONTROL:-dynamic}"
+      # PHP_FPM_PM_START_SERVERS: "${PHP_FPM_PM_START_SERVERS:-1}"
+      # PHP_FPM_PM_MIN_SPARE_SERVERS: "${PHP_FPM_PM_MIN_SPARE_SERVERS:-1}"
+      # PHP_FPM_PM_MAX_SPARE_SERVERS: "${PHP_FPM_PM_MAX_SPARE_SERVERS:-10}"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - coolify_data:/data
+      - coolify_ssh:/var/www/html/storage/app/ssh
+      - coolify_applications:/var/www/html/storage/app/applications
+      - coolify_databases:/var/www/html/storage/app/databases
+      - coolify_backups:/var/www/html/storage/app/backups
+    # Uncomment the following lines to expose Coolify ports
+    # Note: Exposing ports is not recommended in production environments.
+    # ports:
+    #   - "8000:8000"
+    networks:
+      - docker2docker
+
+networks:
+  docker2docker:
+    external: true
+
+volumes:
+  coolify_data:
+    driver: local
+  coolify_ssh:
+    driver: local
+  coolify_applications:
+    driver: local
+  coolify_databases:
+    driver: local
+  coolify_backups:
+    driver: local

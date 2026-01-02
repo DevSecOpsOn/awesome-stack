@@ -1,0 +1,93 @@
+version: "3.9"
+
+services:
+
+  server:
+    image: gitea/gitea:1.24
+    deploy:
+      labels:
+        - traefik.enable=true
+        - traefik.swarm.lbswarm=false
+        - traefik.swarm.network=docker2docker
+        - traefik.http.routers.gitea_server.entrypoints=web,websecure
+        - traefik.http.routers.gitea_server.rule=Host(`gitea.docker.local`)
+        - traefik.http.services.gitea_server.loadbalancer.server.port=3000
+        - traefik.consulcatalog.connect=true
+      mode: replicated
+      replicas: 1
+      endpoint_mode: vip
+      update_config:
+        parallelism: 1
+        delay: 10s
+      restart_policy:
+        condition: any
+        delay: 5s
+        window: 120s
+      resources:
+        limits:
+          memory: 1G
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "200k"
+        max-file: "10"
+    environment:
+      USER_UID: 1000
+      GROUP_GID: 1000
+      GITEA__database__PASSWD: "${DOCKER_SECRET_DB}"
+      GITEA_RUNNER_REGISTRATION_TOKEN: "${GITEA_RUNNER_REGISTRATION_TOKEN}"
+    env_file:
+      - ./.secrets/gitea.env
+    networks:
+      - docker2docker
+    volumes:
+      - gitea:/data
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - ./scripts/gitea_usermngt:/etc/s6/gitea_usermngt
+    # Uncomment the following lines to expose Gitea ports
+    # Note: Exposing Gitea ports is not recommended in production environments.
+    # ports:
+    #   - "3000:3000"
+    #   - "222:22"
+
+  runner:
+    image: gitea/act_runner:0.2.12
+    deploy:
+      labels:
+        - traefik.enable=false
+      replicas: 1
+      mode: replicated
+      endpoint_mode: vip
+      update_config:
+        parallelism: 1
+        delay: 10s
+      restart_policy:
+        condition: any
+        delay: 5s
+        window: 120s
+      resources:
+        limits:
+          memory: 1G
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "200k"
+        max-file: "10"
+    environment:
+      GITEA_INSTANCE_URL: "${GITEA_URL_DOCKER}"
+      GITEA_RUNNER_REGISTRATION_TOKEN: "${GITEA_DOCKER_TOKEN}"
+    networks:
+      - docker2docker
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+
+networks:
+  docker2docker:
+      external: true
+
+volumes:
+  gitea:
+    driver: local
+  runner:
+    driver: local

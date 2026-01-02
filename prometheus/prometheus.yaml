@@ -1,0 +1,119 @@
+version: '3.8'
+
+services:
+
+  prometheus:
+    image: prom/prometheus:latest
+    deploy:
+      labels:
+        - traefik.enable=true
+        - traefik.swarm.lbswarm=false
+        - traefik.swarm.network=docker2docker
+        - traefik.http.routers.prometheus_mon.entrypoints=web,websecure
+        - traefik.http.routers.prometheus_mon.rule=Host(`prometheus.docker.local`)
+        - traefik.http.services.prometheus_mon.loadbalancer.server.port=9090
+        - traefik.consulcatalog.connect=true
+      replicas: 1
+      mode: replicated
+      update_config:
+        parallelism: 1
+        delay: 10s
+        failure_action: rollback
+        order: stop-first
+      restart_policy:
+        condition: any
+        delay: 5s
+        window: 10s
+      endpoint_mode: vip
+      resources:
+        limits:
+          memory: 1G
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "200k"
+        max-file: "10"
+    environment:
+      SERVICE_NAME: prometheus
+      SERVICE_TAGS: monitoring,metrics
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+      - '--web.external-url=http://prometheus.docker.local'
+    volumes:
+      - prometheus-data:/prometheus
+      - ./config/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./config/prometheus-token:/etc/prometheus/prometheus-token:ro
+      - ./config/alert_rules.yml:/etc/prometheus/alert_rules.yml:ro
+    # ports:
+    #   - 9090:9090
+    networks:
+      - docker2docker
+
+  alertmanager:
+    image: prom/alertmanager:latest
+    deploy:
+      labels:
+        - traefik.enable=true
+        - traefik.swarm.lbswarm=false
+        - traefik.swarm.network=docker2docker
+        - traefik.http.routers.alertmanager_mon.entrypoints=web,websecure
+        - traefik.http.routers.alertmanager_mon.rule=Host(`alertmanager.docker.local`)
+        - traefik.http.services.alertmanager_mon.loadbalancer.server.port=9093
+        - traefik.consulcatalog.connect=true
+      replicas: 1
+      mode: replicated
+      update_config:
+        parallelism: 1
+        delay: 10s
+        failure_action: rollback
+        order: stop-first
+      restart_policy:
+        condition: any
+        delay: 5s
+        window: 10s
+      endpoint_mode: vip
+      resources:
+        limits:
+          memory: 512M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "200k"
+        max-file: "10"
+    environment:
+      SERVICE_NAME: alertmanager
+      SERVICE_TAGS: monitoring,alerting
+    working_dir: /etc/alertmanager
+    command:
+      - --storage.path=/alertmanager
+      - --web.external-url=http://alertmanager.docker.local
+      - --web.route-prefix=/
+      - --config.file=/etc/alertmanager/alertmanager.yml
+    # ports:
+    #   - 9093:9093
+    secrets:
+      - SLACK_ALERTS_HOOK
+    volumes:
+      - alertmanager-data:/alertmanager/data
+      - ./config/alertmanager.yml:/etc/alertmanager/alertmanager.yml:rw
+    networks:
+      - docker2docker
+
+secrets:
+  SLACK_ALERTS_HOOK:
+    external: true
+
+volumes:
+  prometheus-data:
+    driver: local
+  alertmanager-data:
+    driver: local
+
+networks:
+  docker2docker:
+    external: true

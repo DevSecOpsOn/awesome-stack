@@ -1,0 +1,11 @@
+#!/bin/sh
+set -e
+
+# Create the admin user at startup process
+exec su-exec $USER /usr/local/bin/gitea admin user create --username rdgacarvalho --password admin12345 --email rdgacarvalho@localhost.com
+
+# Generate a runner token
+exec su-exec $USER /usr/local/bin/gitea actions generate-runner-token
+
+# Generate a runner token for org
+exec su-exec $USER /usr/local/bin/gitea actions generate-runner-token --org DevSecOps4u

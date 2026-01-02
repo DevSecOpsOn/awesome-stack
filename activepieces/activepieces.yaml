@@ -1,0 +1,115 @@
+version: "3.9"
+
+services:
+
+  server:
+    image: activepieces/activepieces:0.70.5
+    deploy:
+      labels:
+        - traefik.enable=true
+        - traefik.swarm.lbswarm=false
+        - traefik.swarm.network=docker2docker
+        - traefik.http.routers.activepieces.entrypoints=web,websecure
+        - traefik.http.routers.activepieces.rule=Host(`activepieces.docker.local`)
+        - traefik.http.services.activepieces.loadbalancer.server.port=80
+        - traefik.consulcatalog.connect=true
+        - sablier.enable=true
+        - sablier.group=devsecops
+      mode: replicated
+      replicas: 1
+      endpoint_mode: vip
+      update_config:
+        parallelism: 1
+        delay: 10s
+        failure_action: rollback
+        order: stop-first
+      restart_policy:
+        condition: any
+        delay: 5s
+        window: 120s
+      resources:
+        limits:
+          memory: 2G
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "200k"
+        max-file: "10"
+    environment:
+      SERVICE_NAME: "activepieces"
+      SERVICE_TAGS: "automation,workflow,nocode"
+      AP_CONTAINER_TYPE: "APP"
+      AP_ENVIRONMENT: "development"
+      AP_EXECUTION_MODE: "UNSANDBOXED"
+      AP_FRONTEND_URL: "http://activepieces.docker.local"
+      AP_WEBHOOK_TIMEOUT_SECONDS: 30
+      AP_TRIGGER_DEFAULT_POLL_INTERVAL: 5
+      AP_DB_TYPE: "POSTGRES"
+      AP_POSTGRES_URL: "postgres://root:${DOCKER_SECRET_DB}@db_postgres:5432/activepieces?sslmode=disable"
+      AP_REDIS_TYPE: "DEFAULT"
+      AP_REDIS_USER: "default"
+      AP_REDIS_PASSWORD: "${DOCKER_SECRET_DB}"
+      AP_REDIS_HOST: "redis_server"
+      AP_REDIS_PORT: "6379"
+      AP_REDIS_DB: "1"
+      AP_REDIS_USE_SSL: "false"
+      AP_OTEL_ENABLED: "true"
+      OTEL_EXPORTER_OTLP_ENDPOINT: "http://otelcol:4317/v1/traces"
+      AP_SIGN_UP_ENABLED: "true"
+      AP_ENCRYPTION_KEY: ${AP_ENCRYPTION_KEY}
+      AP_JWT_SECRET: ${AP_JWT_SECRET}
+      AP_WORKER_TOKEN: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IjEifQ.eyJpZCI6Imt6UEQ2SHY2bHdmV3VpVUhBd0F2RyIsInR5cGUiOiJXT1JLRVIiLCJpYXQiOjE3NjAxMDI5OTIsImV4cCI6NDkxMzcwMjk5MiwiaXNzIjoiYWN0aXZlcGllY2VzIn0._GIaEYuxsgADXX6gF4pgoiJiucQJB1Poy2NkBKXvEjA"
+      AP_TELEMETRY_ENABLED: "true"
+    volumes:
+      - activepieces_data:/usr/src/app/packages/server/api/src/assets
+    # Uncomment the following lines to expose Activepieces ports
+    # Note: Exposing ports is not recommended in production environments.
+    # ports:
+    #   - "80:80"
+    networks:
+      - docker2docker
+
+  worker:
+    image: activepieces/activepieces:0.70.5
+    deploy:
+      mode: replicated
+      replicas: 1
+      endpoint_mode: vip
+      update_config:
+        parallelism: 1
+        delay: 10s
+        failure_action: rollback
+        order: stop-first
+      restart_policy:
+        condition: any
+        delay: 5s
+        window: 120s
+      resources:
+        limits:
+          memory: 2G
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "200k"
+        max-file: "10"
+    environment:
+      SERVICE_NAME: "activepieces-worker"
+      SERVICE_TAGS: "automation,workflow,nocode,worker"
+      AP_CONTAINER_TYPE: "WORKER"
+      AP_ENVIRONMENT: "development"
+      AP_EXECUTION_MODE: "UNSANDBOXED"
+      AP_FRONTEND_URL: "http://activepieces.docker.local"
+      AP_WORKER_TOKEN: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IjEifQ.eyJpZCI6Imt6UEQ2SHY2bHdmV3VpVUhBd0F2RyIsInR5cGUiOiJXT1JLRVIiLCJpYXQiOjE3NjAxMDI5OTIsImV4cCI6NDkxMzcwMjk5MiwiaXNzIjoiYWN0aXZlcGllY2VzIn0._GIaEYuxsgADXX6gF4pgoiJiucQJB1Poy2NkBKXvEjA"
+      AP_API_URL: "http://activepieces_server:80"
+    volumes:
+      - activepieces_data:/usr/src/app/packages/server/api/src/assets
+    networks:
+      - docker2docker
+
+networks:
+  docker2docker:
+    external: true
+
+volumes:
+  activepieces_data:
+    driver: local

@@ -1,0 +1,57 @@
+version: "3.9"
+
+services:
+
+  localstack:
+    image: localstack/localstack
+    deploy:
+      labels:
+        - SERVICE_IGNORE=false
+        - traefik.enable=false
+        - traefik.swarm.network=docker2docker
+        - traefik.swarm.lbswarm=false
+        - traefik.http.routers.dashboard.entrypoints=web,websecure
+        - traefik.consulcatalog.connect=true
+        - sablier.enable=true
+        - sablier.group=devsecops
+      mode: replicated
+      replicas: 1
+      update_config:
+        parallelism: 1
+        delay: 10s
+        order: start-first
+        failure_action: rollback
+      restart_policy:
+        condition: any
+        delay: 5s
+        max_attempts: 5
+        window: 120s
+      resources:
+        reservations:
+          cpus: '0.25'
+          memory: 20M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "200k"
+        max-file: "10"
+    env_file:
+      - ./envs/default.env
+    ports:
+      # LocalStack Gateway
+      - "4566:4566"
+      # external services port range
+      - "4510-4559:4510-4559"
+    volumes:
+      - localstack_data:/var/lib/localstack:rw
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    networks:
+      - docker2docker
+
+volumes:
+  localstack_data:
+    driver: local
+
+networks:
+  docker2docker:
+    external: true

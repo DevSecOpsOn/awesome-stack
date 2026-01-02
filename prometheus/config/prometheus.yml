@@ -1,0 +1,86 @@
+global:
+  scrape_interval:     35s # By default, scrape targets every 15 seconds.
+  evaluation_interval: 55s # By default, scrape targets every 15 seconds.
+  # scrape_timeout is set to the global default (10s).
+
+  # The labels to add to any time series or alerts when communicating with
+  # external systems (federation, remote storage, Alertmanager).
+  external_labels:
+    monitor: 'master'
+
+# Alertmanager configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          - alertmanager:9093
+
+# Load rules once and periodically evaluate them according to the global 'evaluation_interval'.
+rule_files:
+  - "alert_rules.yml"
+
+# A list of scrape configurations.
+scrape_configs:
+
+  - job_name: 'prometheus'
+    scrape_interval: 15s
+    scrape_timeout:  10s
+    static_configs:
+      - targets: ['prometheus:9090']
+
+  - job_name: docker
+    scrape_interval: 15s
+    scrape_timeout: 10s
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["host.docker.internal:9323"]
+
+  - job_name: 'docker_swarm'
+    dockerswarm_sd_configs:
+      - host: unix:///var/run/docker.sock
+        role: nodes
+    relabel_configs:
+      # Fetch metrics on port 9323.
+      - source_labels: [__meta_dockerswarm_node_address]
+        target_label: __address__
+        replacement: $1:9323
+      # Set hostname as instance label
+      - source_labels: [__meta_dockerswarm_node_hostname]
+        target_label: instance
+
+  - job_name: traefik_proxy
+    scrape_interval: 15s
+    scrape_timeout: 10s
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["traefik:8082"]
+
+  - job_name: loki
+    scrape_interval: 15s
+    scrape_timeout: 10s
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["loki:3100"]
+
+  - job_name: vault
+    metrics_path: /v1/sys/metrics
+    params:
+      format: ['prometheus']
+    scheme: http
+    authorization:
+      credentials_file: /etc/prometheus/prometheus-token
+    static_configs:
+      - targets: ['vault_server:8200']
+
+  # - job_name: consul
+  #   scrape_interval: 15s
+  #   scrape_timeout: 10s
+  #   consul_sd_configs:
+  #     - server: "consul_server:8500"
+  #       token: "01f47f9e-f989-966b-9acc-f88fde2e7f9f"
+  #       datacenter: "/dc1"
+  #       refresh_interval: 30s
+  #       scheme: http
+  #       allow_stale: true
+  #       follow_redirects: true
+  #       enable_http2: true

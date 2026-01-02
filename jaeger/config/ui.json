@@ -1,0 +1,28 @@
+{
+  "monitor": {
+    "menuEnabled": true
+  },
+  "dependencies": {
+    "menuEnabled": true
+  },
+  "archiveEnabled": true,
+  "tracking": {
+    "gaID": "",
+    "trackErrors": true
+  },
+  "menu": [
+    {
+      "label": "About Jaeger",
+      "items": [
+        {
+          "label": "Documentation",
+          "url": "https://www.jaegertracing.io/docs/"
+        },
+        {
+          "label": "GitHub",
+          "url": "https://github.com/jaegertracing/jaeger"
+        }
+      ]
+    }
+  ]
+}

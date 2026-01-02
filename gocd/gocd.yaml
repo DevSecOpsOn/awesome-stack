@@ -1,0 +1,73 @@
+# version: '3.9'
+
+services:
+
+  server:
+    image: gocd/gocd-server:v25.3.0
+    deploy:
+      labels:
+        - traefik.enable=true
+        - traefik.swarm.lbswarm=false
+        - traefik.swarm.network=docker2docker
+        - traefik.http.routers.gocd_server.entrypoints=web,websecure
+        - traefik.http.routers.gocd_server.rule=Host(`gocd.docker.local`)
+        - traefik.http.services.gocd_server.loadbalancer.server.port=8153
+        - traefik.consulcatalog.connect=true
+        - sablier.enable=true
+        - sablier.group=devsecops
+      mode: replicated
+      replicas: 1
+      update_config:
+        parallelism: 1
+        delay: 10s
+      restart_policy:
+        condition: any
+      resources:
+        limits:
+          memory: 1G
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "200k"
+        max-file: "10"
+    # ports:
+    #   - 8153:8153
+    volumes:
+      - go_server:/godata
+      - ./configs/db.properties:/var/lib/go-server/db/db.properties:rw
+    networks:
+      - docker2docker
+
+  agent1:
+    image: gocd/gocd-agent-alpine:v25.3.0
+    deploy:
+      labels:
+        - "traefik.enable=false"
+      mode: replicated
+      replicas: 1
+      update_config:
+        parallelism: 1
+        delay: 10s
+      restart_policy:
+        condition: any
+      resources:
+        limits:
+          cpus: '1'
+          memory: 500M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "200k"
+        max-file: "10"
+    environment:
+      GO_SERVER_URL: http://gocd_server:8153/go
+    networks:
+      - docker2docker
+
+volumes:
+  go_server:
+    driver: local
+
+networks:
+  docker2docker:
+    external: true

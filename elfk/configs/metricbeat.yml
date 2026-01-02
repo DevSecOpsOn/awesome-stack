@@ -1,0 +1,185 @@
+# Metricbeat Configuration
+# Best practices for Docker container metrics collection
+
+# Global settings
+name: "metricbeat-docker"
+tags: ["docker", "containers", "metrics"]
+
+# Metricbeat modules configuration
+metricbeat.config.modules:
+  path: ${path.config}/modules.d/*.yml
+  reload.enabled: true
+  reload.period: 10s
+
+metricbeat.max_start_delay: 10s
+
+# Metricbeat modules
+metricbeat.modules:
+
+# System metrics
+- module: system
+  metricsets:
+    - cpu             # CPU usage
+    - filesystem      # File system usage for each mountpoint
+    - fsstat          # File system summary metrics
+    - load            # CPU load averages
+    - memory          # Memory usage
+    - network         # Network IO
+    - process         # Per process metrics
+    - process_summary # Process summary
+    - core            # Per CPU core usage
+    - diskio          # Disk IO
+    - socket          # Sockets and connection info (linux only)
+  enabled: true
+  period: 10s
+  processes: ['.*']
+  cpu.metrics: ["percentages", "normalized_percentages"]
+  core.metrics: ["percentages"]
+  cpu_ticks: false
+  hostfs: "/hostfs"
+  tags: ["system"]
+
+# Docker metrics
+- module: docker
+  metricsets: 
+    - "container"
+    - "cpu"
+    - "diskio"
+    - "event"
+    - "healthcheck"
+    - "info"
+    - "memory"
+    - "network"
+  enabled: true
+  period: 10s
+  hosts: ["unix:///var/run/docker.sock"]
+  tags: ["docker"]
+
+# Elasticsearch metrics
+- module: elasticsearch
+  metricsets: 
+    - "node"
+    - "node_stats"
+    - "index"
+    - "index_recovery"
+    - "index_summary"
+    - "shard"
+    - "ml_job"
+  enabled: true
+  period: 10s
+  hosts: ["http://elasticsearch:9200"]
+  tags: ["elasticsearch"]
+
+# Kibana metrics
+- module: kibana
+  metricsets: 
+    - "status"
+    - "stats"
+  enabled: true
+  period: 10s
+  hosts: ["http://kibana:5601"]
+  tags: ["kibana"]
+
+# Logstash metrics (if available)
+- module: logstash
+  metricsets: 
+    - "node"
+    - "node_stats"
+  enabled: false
+  period: 10s
+  hosts: ["http://logstash:9600"]
+  tags: ["logstash"]
+
+# HTTP module for health checks
+- module: http
+  metricsets: ["json"]
+  enabled: true
+  period: 30s
+  hosts: ["http://elasticsearch:9200/_cluster/health"]
+  namespace: "elasticsearch.cluster"
+  tags: ["health"]
+
+# Processors
+processors:
+  - add_host_metadata:
+      when.not.contains.tags: forwarded
+  - add_cloud_metadata: ~
+  - add_docker_metadata: ~
+  - add_kubernetes_metadata: ~
+  - drop_fields:
+      fields: ["agent.ephemeral_id", "agent.id", "ecs.version"]
+
+# Output configuration
+output.elasticsearch:
+  hosts: ["elasticsearch:9200"]
+  protocol: "http"
+  
+  # Index settings
+  index: "metricbeat-%{[agent.version]}-%{+yyyy.MM.dd}"
+  
+  # Template settings
+  template.enabled: true
+  template.name: "metricbeat"
+  template.pattern: "metricbeat-*"
+  template.settings:
+    index.number_of_shards: 1
+    index.number_of_replicas: 0
+    index.refresh_interval: 5s
+    index.codec: best_compression
+  
+  # Bulk settings for performance
+  bulk_max_size: 1000
+  worker: 2
+  compression_level: 3
+
+# Alternative output to Logstash (commented out)
+# output.logstash:
+#   hosts: ["logstash:5044"]
+#   compression_level: 3
+
+# Setup configuration
+setup.template.enabled: true
+setup.template.name: "metricbeat"
+setup.template.pattern: "metricbeat-*"
+setup.template.settings:
+  index.number_of_shards: 1
+  index.number_of_replicas: 0
+  index.refresh_interval: 5s
+
+# Kibana setup
+setup.kibana:
+  host: "kibana:5601"
+
+# ILM Policy
+setup.ilm.enabled: true
+setup.ilm.rollover_alias: "metricbeat"
+setup.ilm.pattern: "{now/d}-000001"
+setup.ilm.policy: "metricbeat-policy"
+
+# Logging configuration
+logging.level: info
+logging.to_files: true
+logging.files:
+  path: /var/log/metricbeat
+  name: metricbeat
+  keepfiles: 7
+  permissions: 0644
+
+# Monitoring
+monitoring.enabled: true
+monitoring.elasticsearch:
+  hosts: ["elasticsearch:9200"]
+
+# Performance tuning
+queue.mem:
+  events: 4096
+  flush.min_events: 512
+  flush.timeout: 1s
+
+# HTTP endpoint for health checks
+http.enabled: true
+http.host: 0.0.0.0
+http.port: 5067
+
+# Security settings (disabled for development)
+ssl.verification_mode: none

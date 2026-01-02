@@ -1,0 +1,4 @@
+#!/bin/sh
+
+# This script will be executed when the user creation process is finished or failed
+echo "Creating Gitea user has failed!"

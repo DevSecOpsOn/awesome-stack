@@ -1,0 +1,141 @@
+# Filebeat Configuration
+# Best practices for Docker container log collection
+
+# Global settings
+name: "filebeat-docker"
+tags: ["docker", "containers", "logs"]
+
+filebeat.config.inputs:
+  enabled: true
+  path: configs/*.yml
+  reload.enabled: true
+  reload.period: 10s
+
+# Filebeat inputs
+filebeat.inputs:
+  # Docker container logs
+  - type: filestream
+    id: containers-logs
+    enabled: true
+    paths:
+      - '/var/lib/docker/containers/*/*.log'
+    
+    # Multiline pattern for stack traces
+    multiline.pattern: '^\d{4}-\d{2}-\d{2}'
+    multiline.negate: true
+    multiline.match: after
+    multiline.timeout: 5s
+    
+    # Add Docker metadata
+    processors:
+      - add_docker_metadata:
+          host: "unix:///var/run/docker.sock"
+      - decode_json_fields:
+          fields: ["message"]
+          target: ""
+          overwrite_keys: true
+      - add_host_metadata:
+          when.not.contains.tags: forwarded
+
+  # System logs (optional)
+  - type: filestream
+    id: system-logs
+    enabled: true
+    paths:
+      - /var/log/*.log
+      - /var/log/messages
+      - /var/log/syslog
+    fields:
+      logtype: system
+    fields_under_root: true
+
+# Filebeat modules
+filebeat.config.modules:
+  path: ${path.config}/modules.d/*.yml
+  reload.enabled: true
+  reload.period: 10s
+
+# Output configuration
+output.elasticsearch:
+  hosts: ["elasticsearch:9200"]
+  protocol: "http"
+  
+  # Index settings
+  index: "filebeat-%{[agent.version]}-%{+yyyy.MM.dd}"
+  
+  # Template settings
+  template.enabled: true
+  template.name: "filebeat"
+  template.pattern: "filebeat-*"
+  template.settings:
+    index.number_of_shards: 1
+    index.number_of_replicas: 0
+    index.refresh_interval: 5s
+    index.codec: best_compression
+  
+  # Bulk settings for performance
+  bulk_max_size: 1000
+  worker: 2
+  compression_level: 3
+  escape_html: false
+
+# Alternative output to Logstash (commented out)
+# output.logstash:
+#   hosts: ["logstash:5044"]
+#   compression_level: 3
+#   escape_html: false
+
+# Processors
+processors:
+  - add_host_metadata:
+      when.not.contains.tags: forwarded
+  - add_cloud_metadata: ~
+  - add_docker_metadata: ~
+  - add_kubernetes_metadata: ~
+
+# Logging configuration
+logging.level: info
+logging.to_files: true
+logging.files:
+  path: /var/log/filebeat
+  name: filebeat
+  keepfiles: 7
+  permissions: 0644
+
+# Monitoring
+monitoring.enabled: true
+monitoring.elasticsearch:
+  hosts: ["elasticsearch:9200"]
+
+# Setup configuration
+setup.template.enabled: true
+setup.template.name: "filebeat"
+setup.template.pattern: "filebeat-*"
+setup.template.settings:
+  index.number_of_shards: 1
+  index.number_of_replicas: 0
+  index.refresh_interval: 5s
+
+# Kibana setup
+setup.kibana:
+  host: "kibana:5601"
+
+# ILM Policy
+setup.ilm.enabled: true
+setup.ilm.rollover_alias: "filebeat"
+setup.ilm.pattern: "{now/d}-000001"
+setup.ilm.policy: "filebeat-policy"
+
+# Performance tuning
+queue.mem:
+  events: 4096
+  flush.min_events: 512
+  flush.timeout: 1s
+
+# HTTP endpoint for health checks
+http.enabled: true
+http.host: 0.0.0.0
+http.port: 5066
+
+# Security settings (disabled for development)
+ssl.verification_mode: none

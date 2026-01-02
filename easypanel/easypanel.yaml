@@ -1,0 +1,69 @@
+version: "3.9"
+
+services:
+
+  easypanel:
+    image: easypanel/easypanel:latest
+    deploy:
+      labels:
+        - traefik.enable=true
+        - traefik.swarm.lbswarm=false
+        - traefik.swarm.network=docker2docker
+        - traefik.http.routers.easypanel.entrypoints=web,websecure
+        - traefik.http.routers.easypanel.rule=Host(`easypanel.docker.local`)
+        - traefik.http.services.easypanel.loadbalancer.server.port=3000
+        - traefik.consulcatalog.connect=true
+        - sablier.enable=true
+        - sablier.group=devsecops
+      mode: replicated
+      replicas: 1
+      endpoint_mode: vip
+      update_config:
+        parallelism: 1
+        delay: 10s
+        failure_action: rollback
+        order: stop-first
+      restart_policy:
+        condition: any
+        delay: 5s
+        window: 120s
+      resources:
+        limits:
+          memory: 2G
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "200k"
+        max-file: "10"
+    environment:
+      SERVICE_NAME: "easypanel"
+      SERVICE_TAGS: "paas,deployment,panel"
+    #   NODE_ENV: production
+    #   DATABASE_URL: "postgresql://easypanel:${EASYPANEL_DB_PASSWORD:-easypanel123}@postgres:5432/easypanel"
+    #   SECRET_KEY: "${EASYPANEL_SECRET_KEY:-your-secret-key-here}"
+    #   ENCRYPTION_KEY: "${EASYPANEL_ENCRYPTION_KEY:-your-encryption-key-here}"
+    #   HOSTNAME: "easypanel.docker.local"
+    #   PORT: 3000
+    #   DISABLE_TELEMETRY: "true"
+    # privileged: true
+    command: ["setup"]
+    volumes:
+      - easypanel_data:/app/data
+      - easypanel_projects:/app/projects
+      - /var/run/docker.sock:/var/run/docker.sock
+    # Uncomment the following lines to expose Easypanel ports
+    # Note: Exposing ports is not recommended in production environments.
+    # ports:
+    #   - "3000:3000"
+    networks:
+      - docker2docker
+
+networks:
+  docker2docker:
+    external: true
+
+volumes:
+  easypanel_data:
+    driver: local
+  easypanel_projects:
+    driver: local

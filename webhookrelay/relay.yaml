@@ -1,0 +1,57 @@
+version: '3.9'
+
+services:
+
+  bitbucket:
+    image: webhookrelay/webhookrelayd:latest
+    network_mode: host
+    deploy:
+      labels:
+        - traefik.enable=false
+        - sablier.enable=true
+        - sablier.group=devsecops
+      mode: replicated
+      replicas: 1
+      update_config:
+        parallelism: 1
+        delay: 10s
+      restart_policy:
+        condition: any
+      resources:
+        limits:
+          cpus: '0.90'
+          memory: 1G
+    restart: always
+    command:
+      - --mode
+      - tunnel
+    env_file:
+      - ./.env/bitbucket.env
+
+  github:
+    image: webhookrelay/webhookrelayd:latest
+    network_mode: host
+    deploy:
+      labels:
+        - traefik.enable=false
+      mode: replicated
+      replicas: 0
+      update_config:
+        parallelism: 1
+        delay: 10s
+      restart_policy:
+        condition: any
+      resources:
+        limits:
+          cpus: '0.90'
+          memory: 1G
+    restart: always
+    command:
+      - --mode
+      - tunnel
+    env_file:
+      - ./.env/github.env
+
+networks:
+  docker2docker:
+    external: true

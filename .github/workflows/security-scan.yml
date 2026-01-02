@@ -1,0 +1,62 @@
+name: Security & Credential Scan
+
+on:
+  workflow_call:
+    outputs:
+      scan-results:
+        description: "Security scan results summary"
+        value: ${{ jobs.security-scan.outputs.scan-results }}
+
+env:
+  DOCKER_BUILDKIT: 1
+
+jobs:
+  security-scan:
+    name: Security & Credential Scan
+    runs-on: ubuntu-latest
+    outputs:
+      scan-results: ${{ steps.scan-summary.outputs.results }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Trivy security scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'config'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'HIGH,CRITICAL'
+          exit-code: '0'
+
+      - name: Upload Trivy scan results
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+      - name: Scan for secrets with TruffleHog
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          base: ${{ github.event.repository.default_branch }}
+          head: HEAD
+          extra_args: --debug --only-verified
+
+      - name: Scan for credentials with GitLeaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
+
+      - name: Security scan summary
+        id: scan-summary
+        run: |
+          echo "results=Security scans completed successfully" >> $GITHUB_OUTPUT
+          echo "✅ Trivy config scan completed"
+          echo "✅ TruffleHog secret scan completed"
+          echo "✅ GitLeaks credential scan completed"
