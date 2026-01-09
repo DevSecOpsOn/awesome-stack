@@ -1,0 +1,74 @@
+version: '3.9'
+
+services:
+
+  minio:
+    image: minio/minio:latest
+    deploy:
+      labels:
+        - traefik.enable=true
+        - traefik.swarm.lbswarm=false
+        - traefik.swarm.network=docker2docker
+        - traefik.http.routers.minio_console.entrypoints=web,websecure
+        - traefik.http.routers.minio_console.rule=Host(`minio.docker.local`)
+        - traefik.http.services.minio_console.loadbalancer.server.port=9001
+        # - traefik.http.routers.minio_api.entrypoints=web,websecure
+        # - traefik.http.routers.minio_api.rule=Host(`s3.docker.local`)
+        # - traefik.http.services.minio_api.loadbalancer.server.port=9000
+        - traefik.consulcatalog.connect=true
+      replicas: 1
+      mode: replicated
+      update_config:
+        parallelism: 1
+        delay: 10s
+        failure_action: rollback
+        monitor: 60s
+        max_failure_ratio: 0.3
+      rollback_config:
+        parallelism: 1
+        delay: 5s
+        failure_action: pause
+        monitor: 60s
+        max_failure_ratio: 0.3
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+      endpoint_mode: vip
+      resources:
+        limits:
+          memory: 1G
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    environment:
+      SERVICE_NAME: "minio"
+      SERVICE_TAGS: "storage,s3"
+      MINIO_ROOT_USER: "minioadmin"
+      MINIO_ROOT_PASSWORD: ${DOCKER_SECRET_DB}
+      MINIO_BROWSER_REDIRECT_URL: "http://minio.docker.local"
+      MINIO_SERVER_URL: "http://s3.docker.local"
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+    # ports:
+    #   - "9000:9000"   # S3 API
+    #   - "9001:9001"   # Console
+    volumes:
+      - minio_data:/data
+    networks:
+      - docker2docker
+
+networks:
+  docker2docker:
+    external: true
+
+volumes:
+  minio_data:
+    driver: local

@@ -1,0 +1,59 @@
+version: "3.9"
+
+services:
+
+  komiser:
+    image: tailwarden/komiser:latest
+    deploy:
+      labels:
+        - traefik.enable=true
+        - traefik.swarm.lbswarm=false
+        - traefik.swarm.network=docker2docker
+        - traefik.http.routers.komiser_app.entrypoints=web,websecure
+        - traefik.http.routers.komiser_app.rule=Host(`komiser.docker.local`)
+        - traefik.http.services.komiser_app.loadbalancer.server.port=3000
+        - traefik.consulcatalog.connect=true
+      replicas: 1
+      mode: replicated
+      update_config:
+        parallelism: 1
+        delay: 10s
+        failure_action: rollback
+        order: stop-first
+      restart_policy:
+        condition: any
+        delay: 5s
+        window: 10s
+      endpoint_mode: vip
+      resources:
+        limits:
+          memory: 1G
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "200k"
+        max-file: "10"
+    environment:
+      SERVICE_NAME: komiser
+      SERVICE_TAGS: cloud,cost,monitoring,aws,azure,gcp
+      # Database configuration
+      KOMISER_CONFIG_PATH: /etc/komiser/config.toml
+      # Optional: Enable telemetry
+      KOMISER_TELEMETRY: "false"
+      # Optional: Set log level
+      KOMISER_LOG_LEVEL: "info"
+    ports:
+      - "3100:3000"
+    volumes:
+      - ./config/config.toml:/etc/komiser/config.toml:rw
+      - komiser_data:/tmp/komiser
+    networks:
+      - docker2docker
+
+volumes:
+  komiser_data:
+    driver: local
+
+networks:
+  docker2docker:
+    external: true

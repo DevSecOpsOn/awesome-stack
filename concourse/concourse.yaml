@@ -1,0 +1,122 @@
+version: '3.9'
+
+services:
+
+  web:
+    image: concourse/concourse:7.14.1
+    deploy:
+      labels:
+        - traefik.enable=true
+        - traefik.swarm.lbswarm=false
+        - traefik.swarm.network=docker2docker
+        - traefik.http.routers.concourse_web.entrypoints=web,websecure
+        - traefik.http.routers.concourse_web.rule=Host(`concourse.docker.local`)
+        - traefik.http.services.concourse_web.loadbalancer.server.port=8080
+        - traefik.consulcatalog.connect=true
+        - sablier.enable=true
+        - sablier.group=devsecops
+      mode: replicated
+      replicas: 1
+      update_config:
+        parallelism: 1
+        delay: 10s
+      restart_policy:
+        condition: any
+      resources:
+        reservations:
+          cpus: '0.25'
+          memory: 20M
+    environment:
+      CONCOURSE_POSTGRES_HOST: db_postgres
+      CONCOURSE_POSTGRES_USER: root
+      CONCOURSE_POSTGRES_PASSWORD: ${DOCKER_SECRET_DB}
+      CONCOURSE_POSTGRES_DATABASE: concourseci
+      CONCOURSE_TEAM: "DevSecOpsOn"
+      CONCOURSE_EXTERNAL_URL: http://concourse.docker.local
+      CONCOURSE_CLUSTER_NAME: tanus
+      CONCOURSE_ADD_LOCAL_USER: admin:${DOCKER_SECRET_DB}
+      CONCOURSE_MAIN_TEAM_LOCAL_USER: DevSecOpsOn
+      CONCOURSE_WORKER_BAGGAGECLAIM_DRIVER: overlay
+      CONCOURSE_WORKER_CONTAINERD_DNS_SERVER: "8.8.8.8"
+      CONCOURSE_WORKER_RUNTIME: "houdini"
+      CONCOURSE_CLIENT_SECRET: Y29uY291cnNlLXdlYgo=
+      CONCOURSE_TSA_CLIENT_SECRET: Y29uY291cnNlLXdvcmtlcgo=
+      CONCOURSE_X_FRAME_OPTIONS: allow
+      CONCOURSE_CONTENT_SECURITY_POLICY: "frame-ancestors *;"
+      CONCOURSE_TRACING_JAEGER_ENDPOINT: "http://jaeger-all-in-one:14268/api/traces"
+    privileged: true
+    command: web
+    # cgroup: host
+    # Uncomment this if you want to expose the web port
+    # ports:
+    #   - 8080:8080
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "200k"
+        max-file: "10"
+    volumes:
+      - "./scripts/web:/concourse-keys:rw"
+    networks:
+      - docker2docker
+
+  worker:
+    image: concourse/concourse:7.14.1
+    user: root
+    deploy:
+      labels:
+        - traefik.enable=true
+        - traefik.swarm.lbswarm=false
+        - traefik.swarm.network=docker2docker
+        - traefik.http.routers.concourse_worker.entrypoints=web,websecure
+        - traefik.http.routers.concourse_worker.rule=Host(`worker.concourse.docker.local`)
+        - traefik.http.services.concourse_worker.loadbalancer.server.port=8080
+        - traefik.consulcatalog.connect=true
+      mode: replicated
+      replicas: 1
+      update_config:
+        parallelism: 1
+        delay: 10s
+      restart_policy:
+        condition: any
+      resources:
+        reservations:
+          cpus: '0.25'
+          memory: 20M
+    environment:
+      CONCOURSE_WORKER_RUNTIME: "containerd"
+      CONCOURSE_TSA_HOST: concourse_web:2222
+      CONCOURSE_TSA_PUBLIC_KEY: "/concourse-keys/tsa_host_key.pub"
+      CONCOURSE_TSA_WORKER_PRIVATE_KEY: "/concourse-keys/worker_key"
+      CONCOURSE_WORKER_BAGGAGECLAIM_DRIVER: overlay
+      CONCOURSE_CLIENT_SECRET: Y29uY291cnNlLXdlYgo=
+      CONCOURSE_TSA_CLIENT_SECRET: Y29uY291cnNlLXdvcmtlcgo=
+      CONCOURSE_TEAM: "DevSecOpsOn"
+      CONCOURSE_BIND_IP: 0.0.0.0
+      CONCOURSE_BAGGAGECLAIM_DRIVER: overlay
+      CONCOURSE_CONTAINERD_DNS_PROXY_ENABLE: "true"
+    privileged: true
+    stop_signal: SIGUSR2
+    command: worker
+    cap_add:
+      - ALL
+    tmpfs:
+      - /run
+      - /run/lock
+    # Uncomment this if you want to expose the web port
+    # ports:
+    #   - 8080:8080
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "200k"
+        max-file: "10"
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:ro
+      - "./scripts/worker:/concourse-keys:rw"
+    networks:
+      - docker2docker
+
+networks:
+    docker2docker:
+        external: true

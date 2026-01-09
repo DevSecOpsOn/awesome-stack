@@ -1,0 +1,127 @@
+groups:
+  - name: docker_alerts
+    rules:
+      - alert: Docker::High_Memory_Usage
+        expr: (engine_daemon_container_states_containers{state="running"} * on(instance) group_left() (engine_daemon_engine_memory_bytes / engine_daemon_engine_info{os_type="linux"})) > 0.5
+        for: 2m
+        labels:
+          severity: warning
+          service: docker
+        annotations:
+          summary: "Docker memory usage is above 50%"
+          description: "Docker memory usage on {{ $labels.instance }} has been above 50% for more than 2 minutes. Current usage: {{ $value | humanizePercentage }}"
+
+      - alert: Docker::Container_High_Memory_Usage
+        expr: (container_memory_usage_bytes / container_spec_memory_limit_bytes) > 0.5
+        for: 2m
+        labels:
+          severity: warning
+          service: docker
+        annotations:
+          summary: "Container {{ $labels.name }} memory usage is above 50%"
+          description: "Container {{ $labels.name }} on {{ $labels.instance }} has been using more than 50% of its memory limit for more than 2 minutes. Current usage: {{ $value | humanizePercentage }}"
+
+      - alert: Docker::System_Memory_Usage
+        expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) > 0.5
+        for: 2m
+        labels:
+          severity: warning
+          service: system
+        annotations:
+          summary: "System memory usage is above 50%"
+          description: "System memory usage on {{ $labels.instance }} has been above 50% for more than 2 minutes. Current usage: {{ $value | humanizePercentage }}"
+
+      - alert: Docker::Service_Down
+        expr: up == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: docker
+        annotations:
+          summary: "Docker service {{ $labels.job }} is down"
+          description: "Docker service {{ $labels.job }} on {{ $labels.instance }} has been down for more than 1 minute."
+
+      - alert: Docker::High_CPU_Usage
+        expr: rate(container_cpu_usage_seconds_total[5m]) > 0.8
+        for: 5m
+        labels:
+          severity: warning
+          service: docker
+        annotations:
+          summary: "Container {{ $labels.name }} CPU usage is above 80%"
+          description: "Container {{ $labels.name }} on {{ $labels.instance }} has been using more than 80% CPU for more than 5 minutes. Current usage: {{ $value | humanizePercentage }}"
+
+      - alert: Docker::Swarm_Health_Check
+        expr: up{job="prometheus"} == 1
+        for: 0s
+        labels:
+          severity: info
+          service: docker-swarm
+        annotations:
+          summary: "Docker Swarm Health Check - System is UP"
+          description: "Docker Swarm monitoring system is operational. Prometheus is collecting metrics successfully from {{ $labels.instance }}."
+
+      - alert: Docker::Container_Memory_Waste_Low
+        expr: (container_memory_usage_bytes / container_spec_memory_limit_bytes) < 0.1 and container_spec_memory_limit_bytes > 0
+        for: 10m
+        labels:
+          severity: info
+          service: optimization
+          waste_level: low
+        annotations:
+          summary: "Container {{ $labels.name }} is using less than 10% of allocated memory"
+          description: 'Container {{ $labels.name }} on {{ $labels.instance }} has been using less than 10% of its memory limit for more than 10 minutes. Current usage: {{ $value | humanizePercentage }}. Consider reducing memory limit from {{ with query "container_spec_memory_limit_bytes{name=''" }}{{ . | first | value }}{{ end }} to optimize resource allocation.'
+
+      - alert: Docker::Container_Memory_Waste_Medium
+        expr: (container_memory_usage_bytes / container_spec_memory_limit_bytes) < 0.25 and container_spec_memory_limit_bytes > 0
+        for: 15m
+        labels:
+          severity: info
+          service: optimization
+          waste_level: medium
+        annotations:
+          summary: "Container {{ $labels.name }} is using less than 25% of allocated memory"
+          description: 'Container {{ $labels.name }} on {{ $labels.instance }} has been using less than 25% of its memory limit for more than 15 minutes. Current usage: {{ $value | humanizePercentage }}. Memory limit: {{ with query "container_spec_memory_limit_bytes{name=''" }}{{ . | first | value }}{{ end }}. Consider optimizing memory allocation.'
+
+      - alert: Docker::Container_Memory_Over_Provisioned
+        expr: (container_memory_usage_bytes / container_spec_memory_limit_bytes) < 0.05 and container_spec_memory_limit_bytes > 104857600
+        for: 30m
+        labels:
+          severity: warning
+          service: optimization
+          waste_level: high
+        annotations:
+          summary: "Container {{ $labels.name }} is severely over-provisioned (< 5% memory usage)"
+          description: 'Container {{ $labels.name }} on {{ $labels.instance }} has been using less than 5% of its {{ with query "container_spec_memory_limit_bytes{name=''" }}{{ . | first | value }}{{ end }} memory limit for more than 30 minutes. Current usage: {{ with query "container_memory_usage_bytes{name=''" }}{{ . | first | value }}{{ end }} ({{ $value | humanizePercentage }}). This indicates significant memory waste.'
+
+      - alert: Docker::Container_Memory_Efficiency_Good
+        expr: (container_memory_usage_bytes / container_spec_memory_limit_bytes) > 0.4 and (container_memory_usage_bytes / container_spec_memory_limit_bytes) < 0.8 and container_spec_memory_limit_bytes > 0
+        for: 5m
+        labels:
+          severity: info
+          service: optimization
+          efficiency: good
+        annotations:
+          summary: "Container {{ $labels.name }} has optimal memory usage (40-80%)"
+          description: "Container {{ $labels.name }} on {{ $labels.instance }} is efficiently using {{ $value }} of its allocated memory. This is within the optimal range of 40-80%."
+
+      - alert: Docker::Service_Stack_Memory_Waste
+        expr: avg by (com_docker_stack_namespace) ((container_memory_usage_bytes / container_spec_memory_limit_bytes) and container_spec_memory_limit_bytes > 0) < 0.3
+        for: 20m
+        labels:
+          severity: info
+          service: optimization
+          scope: stack
+        annotations:
+          summary: "Docker stack {{ $labels.com_docker_stack_namespace }} has low average memory utilization"
+          description: "Docker stack {{ $labels.com_docker_stack_namespace }} has an average memory utilization of {{ $value | humanizePercentage }} across all containers for more than 20 minutes. Consider reviewing and optimizing memory limits for this stack."
+
+      - alert: Container::Memory_Limit_Not_Set
+        expr: container_spec_memory_limit_bytes == 0 and container_memory_usage_bytes > 0
+        for: 5m
+        labels:
+          severity: warning
+          service: configuration
+        annotations:
+          summary: "Container {{ $labels.name }} has no memory limit set"
+          description: 'Container {{ $labels.name }} on {{ $labels.instance }} is running without a memory limit. Current usage: {{ with query "container_memory_usage_bytes{name=''" }}{{ . | first | value }}{{ end }}. Consider setting appropriate memory limits to prevent resource contention.'

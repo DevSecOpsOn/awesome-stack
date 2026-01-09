@@ -1,0 +1,62 @@
+version: '3.9'
+
+services:
+  otelcol:
+    image: otel/opentelemetry-collector-contrib:latest
+    deploy:
+      labels:
+        - traefik.enable=true
+        - traefik.swarm.lbswarm=false
+        - traefik.swarm.network=docker2docker
+        - traefik.http.routers.otelcol.entrypoints=web,websecure
+        - traefik.http.routers.otelcol.rule=Host(`otelcol.docker.local`)
+        - traefik.http.services.otelcol.loadbalancer.server.port=8888
+        - traefik.consulcatalog.connect=true
+      replicas: 1
+      mode: replicated
+      update_config:
+        parallelism: 1
+        delay: 10s
+        failure_action: rollback
+        monitor: 60s
+        max_failure_ratio: 0.3
+      rollback_config:
+        parallelism: 1
+        delay: 5s
+        failure_action: pause
+        monitor: 60s
+        max_failure_ratio: 0.3
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+      endpoint_mode: vip
+      resources:
+        limits:
+          memory: 1G
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    environment:
+      SERVICE_NAME: "otelcol"
+      SERVICE_TAGS: "telemetry,collector"
+    command: ["--config=/etc/otelcol-contrib/otel-collector.yaml"]
+    volumes:
+      - ./config/otel-collector.yaml:/etc/otelcol-contrib/otel-collector.yaml:rw
+    # ports:
+    #   - "1888:1888"   # pprof extension
+    #   - "8888:8888"   # Prometheus metrics exposed by the collector
+    #   - "8889:8889"   # Prometheus exporter metrics
+    #   - "13133:13133" # health_check extension
+    #   - "4317:4317"   # OTLP gRPC receiver
+    #   - "4318:4318"   # OTLP HTTP receiver
+    #   - "55679:55679" # zpages extension
+    networks:
+      - docker2docker
+
+networks:
+  docker2docker:
+    external: true

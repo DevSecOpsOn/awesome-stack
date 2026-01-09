@@ -1,0 +1,105 @@
+version: "3.9"
+
+services:
+  traefik:
+    image: traefik:v3.6
+    environment:
+      HOSTNAME: traefik
+      SERVICE_NAME: traefik
+      SERVICE_TAGS: lb, proxy
+      CONSUL_TRAEFIK_TOKEN: ${CONSUL_HTTP_TOKEN}
+    command:
+      - --api=true
+      - --ping=true
+      - --accesslog=true
+      - --api.debug=true
+      - --api.insecure=true
+      - --api.dashboard=true
+      # Docker provider settings
+      - --providers.swarm.watch=true
+      - --providers.swarm.exposedbydefault=true
+      - --providers.swarm.network=docker2docker
+      - --providers.swarm.endpoint=unix:///var/run/docker.sock
+      # Prometheus metrics settings
+      - --metrics.prometheus=true
+      - --metrics.prometheus.buckets=0.1,0.3,1.2,5.0
+      - --metrics.prometheus.addrouterslabels=true
+      - --metrics.prometheus.addServicesLabels=true
+      - --metrics.prometheus.entryPoint=metrics
+      - --entryPoints.metrics.address=:8082
+      # Traefik entry points
+      - --entrypoints.web.address=:80
+      - --entrypoints.websecure.address=:443
+      - --entrypoints.websecure.http.tls=true
+      - --entrypoints.mongo.address=:28017
+      - --entryPoints.metrics.address=:8082
+      # Tracing settings
+      - --tracing=true
+      - --tracing.serviceName=traefik
+      # Consul KV store settings
+      - --providers.consul=true
+      - --providers.consul.rootKey=traefik
+      - --providers.consul.endpoints=consul_server:8500
+      - --providers.consul.token=${CONSUL_TRAEFIK_TOKEN}
+      # Consul Catalog provider settings
+      - --providers.consulcatalog=true
+      - --providers.consulcatalog.refreshInterval=30s
+      - --providers.consulcatalog.prefix=traefik
+      - --providers.consulcatalog.endpoint.address=consul_server:8500
+      - --providers.consulcatalog.endpoint.scheme=http
+      - --providers.consulcatalog.endpoint.token=${CONSUL_TRAEFIK_TOKEN}
+      - --providers.consulcatalog.endpoint.datacenter=dc1
+      - --providers.consulcatalog.exposedByDefault=false
+      - --providers.consulcatalog.defaultRule=Host(`{{ normalize .Name }}.docker.local`)
+      - --providers.consulcatalog.connectAware=true
+      - --providers.consulcatalog.connectByDefault=true
+      - --providers.consulcatalog.serviceName=traefik
+      - --providers.consulcatalog.watch=true
+      # Observability
+      - "--log.level=DEBUG"
+    deploy:
+      replicas: 1
+      labels:
+        - "SERVICE_IGNORE=false"
+        - "traefik.enable=true"
+        # Dashboard router
+        - "traefik.http.routers.dashboard.tls=false"
+        - "traefik.http.routers.dashboard.entrypoints=web,websecure"
+        - "traefik.http.routers.dashboard.service=api@internal"
+        - "traefik.http.routers.dashboard.rule=Host(`traefik.docker.local`)"
+        - "traefik.http.services.dashboard.loadbalancer.server.port=8080"
+      mode: replicated
+      endpoint_mode: vip
+      update_config:
+        parallelism: 1
+        failure_action: rollback
+        delay: 30s
+      restart_policy:
+        condition: any
+        delay: 5s
+        window: 120s
+      placement:
+        constraints:
+          - node.role == manager
+      resources:
+        limits:
+          memory: 1G
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "200k"
+        max-file: "10"
+    ports:
+      - 80:80
+      - 443:443
+      - 8080:8080
+      - 28017:28017
+    volumes:
+      # - ./letsencrypt:/letsencrypt
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - docker2docker
+
+networks:
+  docker2docker:
+    external: true

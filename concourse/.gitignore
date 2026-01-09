@@ -1,0 +1,22 @@
+# Credentials and secrets
+credentials.yml
+*.key
+*.pem
+*.crt
+
+# Concourse keys
+scripts/web/session_signing_key*
+scripts/web/tsa_host_key*
+scripts/worker/worker_key*
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.swp
+*~
+
+# Environment files
+.env
+.env.local

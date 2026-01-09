@@ -1,0 +1,60 @@
+version: "3.9"
+
+services:
+
+  dozzle:
+    image: amir20/dozzle:latest
+    deploy:
+      labels:
+        - traefik.enable=true
+        - traefik.swarm.lbswarm=false
+        - traefik.swarm.network=docker2docker
+        - traefik.http.routers.dozzle.entrypoints=web,websecure
+        - traefik.http.routers.dozzle.rule=Host(`dozzle.docker.local`)
+        - traefik.http.services.dozzle.loadbalancer.server.port=8080
+        - traefik.consulcatalog.connect=true
+      mode: replicated
+      replicas: 1
+      endpoint_mode: vip
+      update_config:
+        parallelism: 1
+        delay: 10s
+        failure_action: rollback
+        order: stop-first
+      restart_policy:
+        condition: any
+        delay: 5s
+        window: 120s
+      resources:
+        limits:
+          memory: 256M
+          cpus: "0.5"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "200k"
+        max-file: "10"
+    environment:
+      SERVICE_NAME: "dozzle"
+      SERVICE_TAGS: "logs,monitoring,viewer"
+      DOZZLE_LEVEL: "info"
+      DOZZLE_FILTER: "status=running"
+      DOZZLE_ENABLE_ACTIONS: "true"
+      DOZZLE_NO_ANALYTICS: "false"
+      DOZZLE_MODE: "${MODE_TYPE:-swarm}"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - dozzle_data:/data
+    # Uncomment the following lines to expose Dozzle ports
+    # ports:
+    #   - "8080:8080"
+    networks:
+      - docker2docker
+
+networks:
+  docker2docker:
+    external: true
+
+volumes:
+  dozzle_data:
+    driver: local

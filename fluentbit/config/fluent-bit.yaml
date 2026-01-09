@@ -1,0 +1,43 @@
+service:
+  flush: 5
+  log_level: debug
+  http_server: true
+  http_listen: 0.0.0.0
+  http_port: 2020
+  hot_reload: on
+  storage.metrics: on
+  storage.path: /tmp/storage
+  storage.sync: normal
+  parsers_file: parsers.yaml
+
+pipeline:
+  # https://docs.fluentbit.io/manual/data-pipeline/inputs
+  inputs:
+
+    - name: fluentbit_metrics
+      tag: internal_metrics
+      scrape_interval: 2
+
+    - name:  tail
+      path: /var/log/system.log
+      db: test.db
+
+  outputs:
+
+    - name: loki
+      match: '*'
+      host: grafana_loki
+      uri: /loki/api/v1/push
+      port: 3100
+      labels: agent=fluend-bit,env=macOS
+      label_keys: $tag,$sub['stream'],$image_name,$container_name,$image_id,$container_id
+      label_map_path: /fluent-bit/etc/logmap.json
+      drop_single_key: on
+      line_format: json
+      auto_kubernetes_labels: on
+      compress: gzip
+
+parsers:
+
+  - name: json
+    format: json

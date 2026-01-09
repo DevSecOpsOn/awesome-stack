@@ -1,0 +1,12 @@
+roles:
+- name: owner
+  github:
+    users: ["admin"]
+- name: member
+  github:
+    teams: ["org:DevSecOpsOn"]
+- name: viewer
+  github:
+    orgs: ["org"]
+  local:
+    users: ["admin"]

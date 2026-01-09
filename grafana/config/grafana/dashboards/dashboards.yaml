@@ -1,0 +1,46 @@
+apiVersion: 1
+
+providers:
+  - name: "Infrastructure Dashboards"
+    orgId: 1
+    folder: "Infrastructure"
+    folderUid: "infrastructure"
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 10
+    allowUiUpdates: true
+    options:
+      path: /etc/grafana/provisioning/dashboards/infrastructure
+
+  - name: "Database Dashboards"
+    orgId: 1
+    folder: "Databases"
+    folderUid: "databases"
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 10
+    allowUiUpdates: true
+    options:
+      path: /etc/grafana/provisioning/dashboards/databases
+
+  - name: "Logging Dashboards"
+    orgId: 1
+    folder: "Logging"
+    folderUid: "logging"
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 10
+    allowUiUpdates: true
+    options:
+      path: /etc/grafana/provisioning/dashboards/logging
+
+  - name: "ELK Stack Dashboards"
+    orgId: 1
+    folder: "ELK Stack"
+    folderUid: "elk-stack"
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 10
+    allowUiUpdates: true
+    options:
+      path: /etc/grafana/provisioning/dashboards/elk

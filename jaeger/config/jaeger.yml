@@ -1,0 +1,30 @@
+# Collector configuration
+collector:
+  zipkin:
+    host-port: ":9411"
+  otlp:
+    grpc:
+      host-port: ":4317"
+    http:
+      host-port: ":4318"
+
+# Query configuration
+query:
+  base-path: /
+  ui-config: /etc/jaeger/ui.json
+
+# Agent configuration
+agent:
+  host-port: ":6831"
+
+# Storage configuration
+storage:
+  type: memory
+  memory:
+    max-traces: 50000
+
+# Sampling configuration
+sampling:
+  default_strategy:
+    type: probabilistic
+    param: 1.0

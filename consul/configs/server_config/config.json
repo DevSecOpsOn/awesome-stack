@@ -1,0 +1,28 @@
+{
+  "datacenter": "dc1",
+  "data_dir": "/consul/data",
+  "node_name": "consul-server-1",
+  "server": true,
+  "bootstrap": true,
+  "ui_config": {
+    "enabled": true
+  },
+  "addresses": {
+    "http": "0.0.0.0"
+  },
+
+  "retry_join": ["consul_server", "server"],
+  "leave_on_terminate": true,
+  "skip_leave_on_interrupt": true,
+  "log_level": "debug",
+  "encrypt": "8I0FY7QnaAeESSgEOfr3xQ==",
+  "disable_update_check": true,
+
+  "telemetry": {
+    "statsite_address": "127.0.0.1:2180"
+  },
+
+  "autopilot": {
+    "cleanup_dead_servers": true
+  }
+}

@@ -1,0 +1,94 @@
+version: '3.9'
+
+services:
+
+  server:
+    image: henrygd/beszel:latest
+    deploy:
+      labels:
+        - traefik.enable=true
+        - traefik.swarm.lbswarm=false
+        - traefik.swarm.network=docker2docker
+        - traefik.http.routers.beszel_mon.entrypoints=web,websecure
+        - traefik.http.routers.beszel_mon.rule=Host(`beszel.docker.local`)
+        - traefik.http.services.beszel_mon.loadbalancer.server.port=8090
+        - traefik.consulcatalog.connect=true
+        - sablier.enable=true
+        - sablier.group=devsecops
+      replicas: 1
+      endpoint_mode: vip
+      update_config:
+        parallelism: 1
+        delay: 10s
+      restart_policy:
+        condition: any
+        delay: 5s
+        window: 120s
+      resources:
+        limits:
+          memory: 1G
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "200k"
+        max-file: "10"
+    # ports:
+    #   - 8090:8090
+    volumes:
+      - beszel_data:/beszel_data
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    networks:
+      - docker2docker
+
+  agent:
+    image: henrygd/beszel-agent
+    container_name: beszel-agent
+    deploy:
+      mode: replicated
+      replicas: 1
+      labels:
+        - "traefik.enable=true"
+        - "traefik.http.services.beszel-agent.loadbalancer.server.port=45876"
+      update_config:
+        parallelism: 1
+        delay: 10s
+      restart_policy:
+        condition: any
+        delay: 5s
+        window: 120s
+      resources:
+        limits:
+          memory: 1G
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "200k"
+        max-file: "10"
+    network_mode: tcp
+    environment:
+      LISTEN: 45876
+      # 'UPDATE WITH YOUR PUBLIC KEY (copy from "Add system" dialog)'
+      KEY: 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIJ63VGxEbhh0W9LgxDGjj1gCJgfD2tRKiAeHi3Znfkt'
+      HUB_URL: http://beszel_server:8090
+      # Update the KEY and TOKEN environment variables with your public key and token, then restart the agent
+      # Note: Update and export below environment variable with your token http://beszel.docker.local/settings/tokens
+      # export BESZEL_UNIVERSAL_TOKEN="<your-token>"
+      TOKEN: ${BESZEL_UNIVERSAL_TOKEN}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - beszel_agent_data:/var/lib/beszel-agent
+      # monitor other disks / partitions by mounting a folder in /extra-filesystems
+      # - /mnt/disk/.beszel:/extra-filesystems/sda1:ro
+    networks:
+      - docker2docker
+
+volumes:
+  beszel_data:
+    external: true
+  beszel_agent_data:
+    external: true
+
+networks:
+  docker2docker:
+      external: true

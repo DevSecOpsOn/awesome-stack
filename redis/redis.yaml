@@ -1,0 +1,89 @@
+version: '3.9'
+
+services:
+
+  server:
+    image: redis:7.4-alpine
+    deploy:
+      labels:
+        - traefik.enable=false
+      replicas: 2
+      endpoint_mode: vip
+      update_config:
+        parallelism: 1
+        delay: 10s
+      restart_policy:
+        condition: any
+        delay: 5s
+        window: 120s
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 500M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "200k"
+        max-file: "10"
+    command: redis-server --loglevel debug --save 20 1 --requirepass ${DOCKER_SECRET_DB}
+    # ports:
+    #   - 6379:6379
+    volumes:
+      - redis_data:/data
+      - ./configs/redis.conf:/usr/local/etc/redis
+    networks:
+      - docker2docker
+
+  insight:
+    image: redis/redisinsight:latest
+    deploy:
+      labels:
+        - traefik.enable=true
+        - traefik.swarm.lbswarm=false
+        - traefik.swarm.network=docker2docker
+        - traefik.http.routers.redis_insight.entrypoints=web,websecure
+        - traefik.http.routers.redis_insight.rule=Host(`redis.docker.local`)
+        - traefik.http.services.redis_insight.loadbalancer.server.port=5540
+        - traefik.consulcatalog.connect=true
+      replicas: 1
+      endpoint_mode: vip
+      update_config:
+        parallelism: 1
+        delay: 10s
+      restart_policy:
+        condition: any
+        delay: 5s
+        window: 120s
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 500M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "200k"
+        max-file: "10"
+    environment:
+      # https://redis.io/docs/latest/operate/redisinsight/configuration/#preconfigure-database-connections-using-environment-variables
+      RI_REDIS_HOST: "redis_server"
+      RI_REDIS_PORT: "6379"
+      RI_REDIS_USERNAME: "default"
+      RI_REDIS_PASSWORD: ${DOCKER_SECRET_DB}
+      RI_REDIS_DB: "0"
+      RI_REDIS_TLS: "false"
+    # ports:
+    #   - 5540:5540
+    volumes:
+      - insight_data:/data
+    networks:
+      - docker2docker
+
+volumes:
+  redis_data:
+    driver: local
+  insight_data:
+    driver: local
+
+networks:
+  docker2docker:
+    external: true

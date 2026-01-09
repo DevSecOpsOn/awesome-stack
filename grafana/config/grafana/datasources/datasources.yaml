@@ -1,0 +1,191 @@
+apiVersion: 1
+
+datasources:
+
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus_prometheus:9090
+    isDefault: true
+    jsonData:
+      httpMethod: POST
+      manageAlerts: true
+      allowAsRecordingRulesTarget: true
+      prometheusType: Prometheus
+      prometheusVersion: 3.3.0
+      cacheLevel: "High"
+      disableRecordingRules: false
+      timeInterval: 10s # Prometheus scrape interval
+      incrementalQueryOverlapWindow: 10m
+
+  - name: Alertmanager
+    type: alertmanager
+    access: proxy
+    orgId: 1
+    url: http://prometheus_alertmanager:9093
+    basicAuth: false
+    isDefault: false
+    version: 1
+    editable: false
+    jsonData:
+      implementation: prometheus
+
+  - name: Loki
+    type: loki
+    access: proxy
+    orgId: 1
+    url: http://grafana_loki:3100
+    basicAuth: false
+    isDefault: false
+    version: 1
+    editable: false
+
+  - name: Redis
+    type: redis-datasource
+    access: proxy
+    url: redis://redis_server:6379
+    secureJsonData:
+      password: ${GF_SECURITY_ADMIN_PASSWORD}
+    jsonData:
+      client: standalone
+      poolSize: 5
+      timeout: 10
+      pingInterval: 0
+      pipelineWindow: 0
+
+  - name: PostgreSQL
+    type: postgres
+    access: proxy
+    url: db_postgres:5432
+    database: postgres
+    user: postgres
+    secureJsonData:
+      password: ${GF_SECURITY_ADMIN_PASSWORD}
+    jsonData:
+      sslmode: disable
+      maxOpenConns: 100
+      maxIdleConns: 100
+      maxIdleConnsAuto: true
+      connMaxLifetime: 14400
+      postgresVersion: 1500
+      timescaledb: false
+
+  - name: MySQL
+    type: mysql
+    access: proxy
+    url: db_mysql:3306
+    database: mysql
+    user: root
+    secureJsonData:
+      password: ${GF_SECURITY_ADMIN_PASSWORD}
+    jsonData:
+      maxOpenConns: 100
+      maxIdleConns: 100
+      maxIdleConnsAuto: true
+      connMaxLifetime: 14400
+
+  - name: Tempo
+    type: tempo
+    access: proxy
+    url: http://grafana_tempo:3200
+    isDefault: false
+    jsonData:
+      tracesToLogs:
+        datasourceUid: "Loki"
+        tags: ["job", "instance", "pod", "namespace"]
+        mappedTags: [{ key: "service.name", value: "service" }]
+        mapTagNamesEnabled: false
+        spanStartTimeShift: "1h"
+        spanEndTimeShift: "1h"
+        filterByTraceID: false
+        filterBySpanID: false
+      tracesToMetrics:
+        datasourceUid: "Prometheus"
+        tags: [{ key: "service.name", value: "service" }, { key: "job" }]
+        queries:
+          - name: "Sample query"
+            query: "sum(rate(traces_spanmetrics_latency_bucket{$__tags}[5m]))"
+      serviceMap:
+        datasourceUid: "Prometheus"
+      nodeGraph:
+        enabled: true
+      search:
+        hide: false
+      lokiSearch:
+        datasourceUid: "Loki"
+
+  - name: OpenTelemetry Collector
+    type: prometheus
+    access: proxy
+    url: http://prometheus_prometheus:9090
+    isDefault: false
+    jsonData:
+      httpMethod: GET
+      manageAlerts: false
+      prometheusType: Prometheus
+      prometheusVersion: 2.40.0
+      cacheLevel: "Medium"
+      timeInterval: 30s
+
+  - name: Jaeger
+    type: jaeger
+    access: proxy
+    url: http://jaeger_jaeger-all-in-one:16686
+    isDefault: false
+    jsonData:
+      tracesToLogs:
+        datasourceUid: "Loki"
+        tags: ["job", "instance", "pod", "namespace", "service.name"]
+        mappedTags: [{ key: "service.name", value: "service" }]
+        mapTagNamesEnabled: true
+        spanStartTimeShift: "1h"
+        spanEndTimeShift: "1h"
+        filterByTraceID: true
+        filterBySpanID: true
+      tracesToMetrics:
+        datasourceUid: "Prometheus"
+        tags: [{ key: "service.name", value: "service" }, { key: "job" }]
+        queries:
+          - name: "Request Rate"
+            query: "sum(rate(jaeger_spans_received_total{$__tags}[5m]))"
+          - name: "Error Rate"
+            query: "sum(rate(jaeger_spans_received_total{$__tags,status=\"error\"}[5m]))"
+      nodeGraph:
+        enabled: true
+      search:
+        hide: false
+      spanBar:
+        type: "Tag"
+        tag: "http.status_code"
+
+  - name: Mimir
+    type: prometheus
+    access: proxy
+    url: http://prometheus_prometheus:9090
+    isDefault: false
+    jsonData:
+      httpMethod: POST
+      manageAlerts: true
+      allowAsRecordingRulesTarget: true
+      prometheusType: Mimir
+      prometheusVersion: 2.40.0
+      cacheLevel: "High"
+      disableRecordingRules: false
+      timeInterval: 15s
+      incrementalQueryOverlapWindow: 10m
+
+  - name: Elasticsearch
+    type: elasticsearch
+    access: proxy
+    url: http://elfk_elasticsearch:9200
+    database: "[logstash-]YYYY.MM.DD"
+    isDefault: false
+    jsonData:
+      interval: "Daily"
+      timeField: "@timestamp"
+      esVersion: "8.15.0"
+      maxConcurrentShardRequests: 5
+      logMessageField: "message"
+      logLevelField: "level"
+      includeFrozen: false
+      xpack: false

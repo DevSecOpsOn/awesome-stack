@@ -1,0 +1,85 @@
+version: '3.9'
+
+services:
+
+  server:
+    image: "jetbrains/teamcity-server:2025.07"
+    deploy:
+      labels:
+        - traefik.enable=true
+        - traefik.swarm.lbswarm=false
+        - traefik.swarm.network=docker2docker
+        - traefik.http.routers.teamcity_server.entrypoints=web,websecure
+        - traefik.http.routers.teamcity_server.rule=Host(`teamcity.docker.local`)
+        - traefik.http.services.teamcity_server.loadbalancer.server.port=8111
+        - traefik.consulcatalog.connect=true
+        - sablier.enable=true
+        - sablier.group=devsecops
+      mode: replicated
+      replicas: 1
+      update_config:
+        parallelism: 1
+        delay: 10s
+      restart_policy:
+        condition: any
+      resources:
+        limits:
+          memory: 2G
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "200k"
+        max-file: "10"
+    environment:
+      - TEAMCITY_DB_USER=root
+      - TEAMCITY_DB_PASSWORD=${DOCKER_SECRET_DB}
+      - TEAMCITY_DB_URL=jdbc:postgresql://db_postgres:5432/teamcitydb
+    # ports:
+    #   - 8111:8111
+    volumes:
+      - datadir:/data/teamcity_server/datadir
+      - logs:/opt/teamcity/logs
+    networks:
+      - docker2docker
+
+  agent:
+    image: "jetbrains/teamcity-agent:2025.07"
+    privileged: true
+    deploy:
+      labels:
+        - "traefik.enable=false"
+      mode: replicated
+      replicas: 1
+      update_config:
+        parallelism: 1
+        delay: 10s
+      restart_policy:
+        condition: any
+      resources:
+        limits:
+          memory: 2G
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "200k"
+        max-file: "10"
+    environment:
+        SERVER_URL: http://teamcity_server:8111
+        DOCKER_IN_DOCKER: start
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - agent_conf:/data/teamcity_agent/conf
+    networks:
+      - docker2docker
+
+volumes:
+  datadir:
+    driver: local
+  logs:
+    driver: local
+  agent_conf:
+    driver: local
+
+networks:
+  docker2docker:
+    external: true

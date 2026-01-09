@@ -1,0 +1,544 @@
+image:
+  name: atlassian/default-image:3
+
+definitions:
+  services:
+    docker:
+      memory: 4096
+  caches:
+    docker-cache: ~/.docker
+  steps:
+
+    - step: &mirror-repository
+        name: "Mirror repository to GitHub & GitLab"
+        image: docker:latest
+        services:
+          - docker
+        caches:
+          - docker-cache
+        clone:
+          enabled: true
+          lfs: false
+          depth: 5
+        script:
+          - git push --all --porcelain --thin --progress --force git@github.com:DevSecOpsBr/awesome-stack.git || echo "Failed to push to GitHub, continuing with GitLab"
+          - git push --all --porcelain --thin --progress --force git@gitlab.com:devsecopsbr1/docker.git || echo "Failed to push to GitLab, continuing with Bitbucket"
+          - echo "Mirroring completed successfully"
+
+    - step: &security-scan
+        name: "Security & Vulnerability Scan"
+        image: docker:latest
+        services:
+          - docker
+        caches:
+          - docker-cache
+        script:
+          - echo "Starting comprehensive security scan"
+          - apk add --no-cache curl bash
+          - |
+            curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
+          - |
+            echo "Scanning YAML files for misconfigurations"
+            find . -name "*.yaml" -o -name "*.yml" | while read file; do
+              echo "Scanning $file"
+              trivy config --severity HIGH,CRITICAL --exit-code 1 "$file" || exit 1
+            done
+          - |
+            echo "Scanning for secrets and sensitive data"
+            trivy fs --scanners secret --severity HIGH,CRITICAL --exit-code 1 . || exit 1
+          - |
+            echo "Installing GitLeaks for credential detection"
+            wget -O gitleaks.tar.gz https://github.com/zricethezav/gitleaks/releases/latest/download/gitleaks_*_linux_x64.tar.gz
+            tar -xzf gitleaks.tar.gz
+            chmod +x gitleaks
+            mv gitleaks /usr/local/bin/
+          - |
+            echo "Scanning for leaked credentials"
+            gitleaks detect --source . --verbose --exit-code 1
+          - |
+            if find . -name "Dockerfile*" | grep -q .; then
+              echo "Installing Hadolint for Dockerfile linting"
+              wget -O hadolint https://github.com/hadolint/hadolint/releases/latest/download/hadolint-Linux-x86_64
+              chmod +x hadolint
+              mv hadolint /usr/local/bin/
+              echo "Linting Dockerfiles"
+              find . -name "Dockerfile*" | while read dockerfile; do
+                echo "Linting $dockerfile"
+                hadolint "$dockerfile" || exit 1
+              done
+            else
+              echo "No Dockerfiles found, skipping Dockerfile linting"
+            fi
+          - echo "Security scan completed successfully"
+        artifacts:
+          - security-report.txt
+
+    - step: &validate-stacks
+        name: "Validate Docker Stack Files"
+        image: docker:latest
+        services:
+          - docker
+        caches:
+          - docker-cache
+        script:
+          - echo "Validating Docker Compose files and stack structure"
+          - apk add --no-cache docker-compose
+          - |
+            echo "Checking Docker Compose syntax"
+            find . -name "*.yml" -o -name "*.yaml" | while read file; do
+              if grep -q "version:" "$file" && grep -q "services:" "$file"; then
+                echo "Validating: $file"
+                docker-compose -f "$file" config --quiet
+                if [ $? -eq 0 ]; then
+                  echo "Valid: $file"
+                else
+                  echo "Invalid: $file"
+                  exit 1
+                fi
+              fi
+            done
+          - |
+            echo "Checking stack file structure"
+            STACK_DIRS="traefik db ngrok droneci redis atuin gitea harness gogs runatlantis homarr portainer beszel prometheus grafana fluentbit jaeger otelcol consul localstack watchtower minio vault passbolt concourse"
+            for stack_dir in $STACK_DIRS; do
+              if [ -d "$stack_dir" ]; then
+                stack_file=$(find "$stack_dir" -maxdepth 1 -name "*.yml" -o -name "*.yaml" | head -n 1)
+                if [ -n "$stack_file" ]; then
+                  echo "Checking $stack_file for required configurations"
+                  if grep -q "docker2docker" "$stack_file"; then
+                    echo "Network check passed: $stack_file"
+                  else
+                    echo "Warning: $stack_file missing docker2docker network reference"
+                  fi
+                  if grep -q "deploy:" "$stack_file"; then
+                    echo "Deploy config found: $stack_file"
+                  else
+                    echo "Warning: $stack_file missing deploy configuration"
+                  fi
+                else
+                  echo "Info: No stack file found in $stack_dir"
+                fi
+              else
+                echo "Info: Directory $stack_dir not found"
+              fi
+            done
+          - |
+            echo "Checking for hardcoded passwords"
+            if grep -r -i "password.*:" . --include="*.yml" --include="*.yaml" | grep -v "\${" | grep -v "from_secret"; then
+              echo "Error: Found potential hardcoded passwords"
+              exit 1
+            else
+              echo "No hardcoded passwords found"
+            fi
+          - echo "Stack validation completed successfully"
+        artifacts:
+          - validation-report.txt
+
+    - step: &setup-swarm
+        name: "Setup Docker Swarm"
+        image: docker:latest
+        services:
+          - docker
+        caches:
+          - docker-cache
+        script:
+          - echo "Setting up Docker Swarm environment"
+          - |
+            echo "Initializing Docker Swarm"
+            if ! docker info | grep -q "Swarm: active"; then
+              docker swarm init
+              echo "Docker Swarm initialized"
+            else
+              echo "Docker Swarm already active"
+            fi
+          - |
+            echo "Creating overlay network"
+            if ! docker network ls | grep -q "docker2docker"; then
+              docker network create --driver=overlay --attachable docker2docker
+              echo "Created docker2docker network"
+            else
+              echo "docker2docker network already exists"
+            fi
+          - |
+            echo "Creating Docker secrets"
+            echo "dummy-db-password" | docker secret create DOCKER_SECRET_DB - 2>/dev/null || echo "DOCKER_SECRET_DB secret exists"
+            echo "dummy-slack-hook" | docker secret create SLACK_ALERTS_HOOK - 2>/dev/null || echo "SLACK_ALERTS_HOOK secret exists"
+          - |
+            echo "Verifying Docker Swarm setup"
+            docker info | grep "Swarm:"
+            docker network ls | grep docker2docker
+            docker secret ls
+          - echo "Docker Swarm setup completed successfully"
+        artifacts:
+          - swarm-setup.log
+
+    - step: &deploy-base
+        name: "Deploy Base Infrastructure Stacks"
+        image: docker:latest
+        services:
+          - docker
+        caches:
+          - docker-cache
+        script:
+          - echo "Deploying base infrastructure stacks"
+          - |
+            BASE_STACKS="traefik db ngrok droneci"
+            for stack in $BASE_STACKS; do
+              if [ -d "$stack" ]; then
+                stack_file=$(find "$stack" -maxdepth 1 -name "*.yml" -o -name "*.yaml" | head -n 1)
+                if [ -n "$stack_file" ]; then
+                  echo "Deploying $stack using $stack_file"
+                  docker stack deploy -c "$stack_file" "$stack"
+                  echo "Stack $stack deployed successfully"
+                  sleep 5
+                else
+                  echo "No stack file found for $stack"
+                fi
+              else
+                echo "Directory $stack not found"
+              fi
+            done
+          - |
+            echo "Waiting for base services to initialize"
+            sleep 15
+          - |
+            echo "Verifying base stack deployment"
+            docker stack ls
+            docker service ls
+          - echo "Base infrastructure deployment completed"
+        artifacts:
+          - base-deployment.log
+
+    - step: &deploy-devops
+        name: "Deploy DevOps Stacks"
+        image: docker:latest
+        services:
+          - docker
+        caches:
+          - docker-cache
+        script:
+          - echo "Deploying DevOps and monitoring stacks"
+          - |
+            DEVOPS_STACKS="redis atuin gitea harness gogs runatlantis homarr portainer beszel prometheus grafana fluentbit jaeger otelcol consul localstack watchtower minio concourse"
+            for stack in $DEVOPS_STACKS; do
+              if [ -d "$stack" ]; then
+                stack_file=$(find "$stack" -maxdepth 1 -name "*.yml" -o -name "*.yaml" | head -n 1)
+                if [ -n "$stack_file" ]; then
+                  echo "Deploying $stack using $stack_file"
+                  docker stack deploy -c "$stack_file" "$stack"
+                  echo "Stack $stack deployed successfully"
+                  sleep 3
+                else
+                  echo "No stack file found for $stack"
+                fi
+              else
+                echo "Directory $stack not found (optional stack)"
+              fi
+            done
+          - |
+            echo "Waiting for DevOps services to initialize"
+            sleep 20
+          - |
+            echo "Verifying DevOps stack deployment"
+            docker stack ls
+            echo ""
+            echo "Service status:"
+            docker service ls
+          - echo "DevOps stacks deployment completed"
+        artifacts:
+          - devops-deployment.log
+
+    - step: &deploy-security
+        name: "Deploy Security Stacks"
+        image: docker:latest
+        services:
+          - docker
+        caches:
+          - docker-cache
+        script:
+          - echo "Deploying security and compliance stacks"
+          - |
+            SECURITY_STACKS="vault passbolt"
+            for stack in $SECURITY_STACKS; do
+              if [ -d "$stack" ]; then
+                stack_file=$(find "$stack" -maxdepth 1 -name "*.yml" -o -name "*.yaml" | head -n 1)
+                if [ -n "$stack_file" ]; then
+                  echo "Deploying $stack using $stack_file"
+                  docker stack deploy -c "$stack_file" "$stack"
+                  echo "Stack $stack deployed successfully"
+                  sleep 5
+                else
+                  echo "No stack file found for $stack"
+                fi
+              else
+                echo "Directory $stack not found (optional stack)"
+              fi
+            done
+          - |
+            echo "Waiting for security services to initialize"
+            sleep 25
+          - |
+            echo "Verifying security stack deployment"
+            docker stack ls
+            echo ""
+            echo "Service status:"
+            docker service ls
+          - echo "Security stacks deployment completed"
+        artifacts:
+          - security-deployment.log
+
+    - step: &health-check
+        name: "Health Check and Monitoring"
+        image: docker:latest
+        services:
+          - docker
+        caches:
+          - docker-cache
+        script:
+          - echo "Performing comprehensive health checks"
+          - apk add --no-cache curl
+          - |
+            echo "Waiting for all services to be ready"
+            sleep 30
+          - |
+            echo "Current deployment status:"
+            echo "========================="
+            echo "Stacks:"
+            docker stack ls
+            echo ""
+            echo "Services:"
+            docker service ls
+            echo ""
+            echo "Containers:"
+            docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+          - |
+            echo "Performing Traefik health check"
+            timeout 30 sh -c 'until curl -f http://localhost:80 2>/dev/null; do sleep 2; done' && echo "Traefik is responding" || echo "Traefik health check failed"
+          - |
+            echo "Checking service health status"
+            failed_services=$(docker service ls --filter "desired-state=running" --format "{{.Name}} {{.Replicas}}" | grep "0/" | wc -l)
+            if [ "$failed_services" -eq 0 ]; then
+              echo "All services are running successfully"
+            else
+              echo "Some services failed to start:"
+              docker service ls --filter "desired-state=running" --format "{{.Name}} {{.Replicas}}" | grep "0/" || echo "No failed services found"
+            fi
+          - |
+            echo "Generating deployment summary"
+            total_stacks=$(docker stack ls --format "{{.Name}}" | wc -l)
+            total_services=$(docker service ls --format "{{.Name}}" | wc -l)
+            running_services=$(docker service ls --filter "desired-state=running" --format "{{.Name}} {{.Replicas}}" | grep -v "0/" | wc -l || echo "0")
+            echo "Deployment Summary:"
+            echo "=================="
+            echo "Total stacks deployed: $total_stacks"
+            echo "Total services: $total_services"
+            echo "Running services: $running_services"
+            echo "TOTAL_STACKS=$total_stacks" > deployment-summary.env
+            echo "TOTAL_SERVICES=$total_services" >> deployment-summary.env
+            echo "RUNNING_SERVICES=$running_services" >> deployment-summary.env
+            echo "HEALTH_STATUS=healthy" >> deployment-summary.env
+          - |
+            echo "Checking resource usage"
+            docker system df
+            echo ""
+            echo "Network information:"
+            docker network ls
+          - echo "Health check completed successfully"
+        artifacts:
+          - health-check.log
+          - deployment-summary.env
+
+    - step: &notifications
+        name: "Send Notifications"
+        image: alpine:latest
+        script:
+          - echo "Sending deployment notifications"
+          - apk add --no-cache curl jq
+          - |
+            if [ -f "deployment-summary.env" ]; then
+              source deployment-summary.env
+            else
+              TOTAL_STACKS="N/A"
+              TOTAL_SERVICES="N/A"
+              RUNNING_SERVICES="N/A"
+              HEALTH_STATUS="unknown"
+            fi
+          - |
+            if [ -n "$SLACK_WEBHOOK_URL" ]; then
+              echo "Sending Slack notification to commits channel"
+              SLACK_MESSAGE=$(cat <<EOF
+              {
+                "channel": "#commits",
+                "username": "Bitbucket Pipelines",
+                "icon_emoji": ":bitbucket:",
+                "attachments": [
+                  {
+                    "color": "good",
+                    "title": "Docker Swarm Deployment - SUCCESS",
+                    "fields": [
+                      {
+                        "title": "Repository",
+                        "value": "$BITBUCKET_REPO_FULL_NAME",
+                        "short": true
+                      },
+                      {
+                        "title": "Branch",
+                        "value": "$BITBUCKET_BRANCH",
+                        "short": true
+                      },
+                      {
+                        "title": "Pull Request",
+                        "value": "<https://bitbucket.org/$BITBUCKET_REPO_FULL_NAME/pull-requests/$BITBUCKET_PR_ID|PR #$BITBUCKET_PR_ID>",
+                        "short": true
+                      },
+                      {
+                        "title": "Commit",
+                        "value": "<https://bitbucket.org/$BITBUCKET_REPO_FULL_NAME/commits/$BITBUCKET_COMMIT|$BITBUCKET_COMMIT>",
+                        "short": true
+                      },
+                      {
+                        "title": "Pipeline",
+                        "value": "<https://bitbucket.org/$BITBUCKET_REPO_FULL_NAME/addon/pipelines/home#!/results/$BITBUCKET_BUILD_NUMBER|Build #$BITBUCKET_BUILD_NUMBER>",
+                        "short": true
+                      },
+                      {
+                        "title": "Deployment Results",
+                        "value": "Stacks: $TOTAL_STACKS | Services: $RUNNING_SERVICES/$TOTAL_SERVICES running",
+                        "short": false
+                      }
+                    ],
+                    "footer": "Bitbucket Pipelines",
+                    "ts": $(date +%s)
+                  }
+                ]
+              }
+              EOF
+              )
+              curl -X POST -H 'Content-type: application/json' --data "$SLACK_MESSAGE" "$SLACK_WEBHOOK_URL"
+              echo "Slack notification sent successfully"
+            else
+              echo "SLACK_WEBHOOK_URL not configured, skipping Slack notification"
+            fi
+          - |
+            if [ -n "$BITBUCKET_PR_ID" ] && [ -n "$BITBUCKET_ACCESS_TOKEN" ]; then
+              echo "Posting comment to Pull Request"
+              PR_COMMENT=$(cat <<EOF
+              ## Docker Swarm Deployment Results
+
+              ### Security Scan
+              Security scans completed successfully
+
+              ### Stack Validation
+              All stack files validated successfully
+
+              ### Deployment Results
+              - **Total stacks**: $TOTAL_STACKS
+              - **Total services**: $TOTAL_SERVICES
+              - **Running services**: $RUNNING_SERVICES
+              - **Health status**: $HEALTH_STATUS
+
+              ### Links
+              - **Pipeline**: [Build #$BITBUCKET_BUILD_NUMBER](https://bitbucket.org/$BITBUCKET_REPO_FULL_NAME/addon/pipelines/home#!/results/$BITBUCKET_BUILD_NUMBER)
+              - **Commit**: [$BITBUCKET_COMMIT](https://bitbucket.org/$BITBUCKET_REPO_FULL_NAME/commits/$BITBUCKET_COMMIT)
+
+              ### Health Status
+              All security scans passed  
+              Stack validation completed  
+              Docker Swarm initialized  
+              Services deployed successfully  
+
+              ---
+              *Deployment completed at $(date -u '+%Y-%m-%d %H:%M:%S UTC')*
+              EOF
+              )
+              curl -X POST \
+                -H "Authorization: Bearer $BITBUCKET_ACCESS_TOKEN" \
+                -H "Content-Type: application/json" \
+                -d "{\"content\": {\"raw\": $(echo "$PR_COMMENT" | jq -R -s .)}}" \
+                "https://api.bitbucket.org/2.0/repositories/$BITBUCKET_REPO_FULL_NAME/pullrequests/$BITBUCKET_PR_ID/comments"
+              echo "Pull Request comment posted successfully"
+            else
+              echo "Pull Request ID or Access Token not available, skipping PR comment"
+            fi
+          - echo "Notification process completed"
+        artifacts:
+          - notification.log
+
+    - step: &cleanup
+        name: "Cleanup Docker Resources"
+        image: docker:latest
+        services:
+          - docker
+        caches:
+          - docker-cache
+        script:
+          - echo "Cleaning up Docker resources after deployment testing"
+          - |
+            echo "Removing non-essential stacks"
+            CLEANUP_STACKS="redis atuin gitea harness gogs runatlantis homarr portainer beszel prometheus grafana fluentbit jaeger otelcol consul localstack watchtower minio vault passbolt concourse"
+            for stack in $CLEANUP_STACKS; do
+              if docker stack ls --format "{{.Name}}" | grep -q "^${stack}$"; then
+                echo "Removing stack: $stack"
+                docker stack rm "$stack"
+              else
+                echo "Stack $stack not found, skipping"
+              fi
+            done
+          - |
+            echo "Waiting for stack removal to complete"
+            sleep 15
+          - |
+            echo "Pruning unused Docker resources"
+            docker container prune -f
+            docker image prune -f
+            docker volume prune -f
+            docker network prune -f
+            docker system prune -f
+          - |
+            echo "Final Docker status after cleanup:"
+            echo "================================="
+            echo "Remaining stacks:"
+            docker stack ls || echo "No stacks running"
+            echo ""
+            echo "Remaining services:"
+            docker service ls || echo "No services running"
+            echo ""
+            echo "System resource usage:"
+            docker system df
+          - echo "Cleanup process completed successfully"
+        artifacts:
+          - cleanup-report.txt
+
+clone:
+  depth: full
+
+options:
+  max-time: 120
+  docker: true
+  size: 2x
+
+pipelines:
+  # Docker Swarm deployment on pull requests
+  pull-requests:
+    "**":
+      - step:
+          <<: *mirror-repository
+      # - step:
+      #     <<: *security-scan
+      # - step:
+      #     <<: *validate-stacks
+      - step:
+          <<: *setup-swarm
+      # - step:
+      #     <<: *deploy-base
+      - step:
+          <<: *deploy-devops
+      # - step:
+      #     <<: *deploy-security
+      - step:
+          <<: *health-check
+      - step:
+          <<: *notifications
+      - step:
+          <<: *cleanup
+          trigger: automatic

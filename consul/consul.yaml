@@ -1,0 +1,84 @@
+version: "3.9"
+
+services:
+  server:
+    image: hashicorp/consul:1.21.3
+    deploy:
+      labels:
+        - SERVICE_IGNORE=false
+        - traefik.enable=true
+        - traefik.swarm.lbswarm=false
+        - traefik.swarm.network=docker2docker
+        - traefik.http.routers.consul-server.entrypoints=web,websecure
+        - traefik.http.routers.consul-server.rule=Host(`consul.docker.local`)
+        - traefik.http.services.consul-server.loadbalancer.server.port=8500
+      replicas: 1
+      mode: replicated
+      endpoint_mode: vip
+      update_config:
+        parallelism: 1
+        failure_action: rollback
+        delay: 15s
+      restart_policy:
+        condition: any
+      resources:
+        limits:
+          memory: 1G
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "200k"
+        max-file: "10"
+    environment:
+      - CONSUL_BIND_INTERFACE=eth0
+      - CONSUL_HTTP_TOKEN=${CONSUL_HTTP_TOKEN}
+    command: "agent -config-dir='/consul/config' -auto-reload-config"
+    # ports:
+    #   - "8500:8500"
+    #   - "8600:8600/tcp"
+    #   - "8600:8600/udp"
+    volumes:
+      - server_data:/consul/data
+      - "./configs/server_config/config.json:/consul/config/config.json:rw"
+      - "./scripts:/consul/scripts:rw"
+    networks:
+      - docker2docker
+
+  client:
+    image: hashicorp/consul:1.21.3
+    deploy:
+      labels:
+        - "SERVICE_IGNORE=false"
+        - traefik.enable=false
+      replicas: 1
+      mode: replicated
+      endpoint_mode: vip
+      update_config:
+        parallelism: 1
+        failure_action: rollback
+        delay: 20s
+      restart_policy:
+        condition: any
+      resources:
+        limits:
+          memory: 1G
+    environment:
+      - CONSUL_BIND_INTERFACE=eth0
+      - CONSUL_HTTP_TOKEN=${CONSUL_HTTP_TOKEN}
+    command: "agent -config-dir='/consul/config' -auto-reload-config"
+    volumes:
+      - agent_data:/consul/data
+      - "./configs/client_config/:/consul/config/:rw"
+    networks:
+      - docker2docker
+
+
+volumes:
+  server_data:
+    external: true
+  agent_data:
+    external: true
+
+networks:
+  docker2docker:
+    external: true

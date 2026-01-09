@@ -1,0 +1,54 @@
+version: "3.9"
+
+services:
+  hedgedoc:
+    image: quay.io/hedgedoc/hedgedoc:1.10.5
+    deploy:
+      labels:
+        - traefik.enable=true
+        - traefik.swarm.lbswarm=false
+        - traefik.swarm.network=docker2docker
+        - traefik.http.routers.hedgedoc_server.entrypoints=web,websecure
+        - traefik.http.routers.hedgedoc_server.rule=Host(`hedgedoc.docker.local`)
+        - traefik.http.services.hedgedoc_server.loadbalancer.server.port=3000
+        - traefik.consulcatalog.connect=true
+        - sablier.enable=true
+        - sablier.group=devsecops
+      replicas: 1
+      endpoint_mode: vip
+      update_config:
+        parallelism: 1
+        delay: 10s
+      restart_policy:
+        condition: any
+        delay: 5s
+        window: 120s
+      resources:
+        limits:
+          memory: 1G
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "200k"
+        max-file: "10"
+    environment:
+      CMD_DB_URL: postgres://root:${DOCKER_SECRET_DB}@db_postgres:5432/hedgedoc?sslmode=disable
+      CMD_DOMAIN: hedgedoc.docker.local
+      CMD_URL_ADDPORT: "false"
+      CMD_SESSION_SECRET: ${HOMARR_SECRET_KEY}
+    # ports:
+    #   - '3000:3000'
+    volumes:
+      - uploads:/hedgedoc/public/uploads:rw
+    networks:
+      - docker2docker
+
+volumes:
+  uploads:
+    external: true
+  hedgedoc:
+    external: true
+
+networks:
+  docker2docker:
+    external: true

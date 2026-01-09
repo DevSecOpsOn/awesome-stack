@@ -1,0 +1,88 @@
+version: '3.9'
+
+services:
+
+  portal1:
+    image: traefik/whoami
+    deploy:
+      labels:
+        # Enable Traefik for this service
+        - traefik.enable=true
+        - traefik.swarm.network=docker2docker
+        # Docker provider configuration (primary)
+        - traefik.http.routers.portal1.entrypoints=web,websecure
+        - traefik.http.routers.portal1.rule=Host(`portal1.docker.local`)
+        - traefik.http.routers.portal1.rule=HostRegexp(`app1.{ip:.*}.docker.local`)
+        - traefik.http.services.portal1.loadbalancer.server.port=80
+        # Consul service registration via Docker labels
+        - consul.service.name=portal1
+        - consul.service.tags=web,blue
+        - consul.service.port=80
+        - consul.service.address={{.Node.IP}}
+        - consul.service.check.http=http://{{.Node.IP}}:{{.Port}}/
+        - consul.service.check.interval=10s
+        - consul.service.check.timeout=3s
+        # Traefik metadata for Consul Catalog provider
+        - traefik.consulcatalog.connect=true
+      replicas: 1
+      endpoint_mode: vip
+      update_config:
+        parallelism: 1
+        delay: 10s
+      restart_policy:
+        condition: any
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 500M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "200k"
+        max-file: "10"
+    networks:
+      - docker2docker
+
+  portal2:
+    image: traefik/whoami
+    deploy:
+      labels:
+        # Enable Traefik for this service
+        - traefik.enable=true
+        - traefik.swarm.network=docker2docker
+        # Docker provider configuration (primary)
+        - traefik.http.routers.portal2.entrypoints=web,websecure
+        - traefik.http.routers.portal2.rule=Host(`portal2.docker.local`)
+        - traefik.http.services.portal2.loadbalancer.server.port=80
+        # Consul service registration via Docker labels
+        - consul.service.name=portal2
+        - consul.service.tags=web,green
+        - consul.service.port=80
+        - consul.service.address={{.Node.IP}}
+        - consul.service.check.http=http://{{.Node.IP}}:{{.Port}}/
+        - consul.service.check.interval=10s
+        - consul.service.check.timeout=3s
+        # Traefik metadata for Consul Catalog provider
+        - traefik.consulcatalog.connect=true
+      replicas: 1
+      endpoint_mode: vip
+      update_config:
+        parallelism: 1
+        delay: 10s
+      restart_policy:
+        condition: any
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 500M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "200k"
+        max-file: "10"
+    networks:
+      - docker2docker
+
+networks:
+  docker2docker:
+    external: true

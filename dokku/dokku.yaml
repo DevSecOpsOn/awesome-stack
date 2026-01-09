@@ -1,0 +1,71 @@
+version: "3.9"
+
+services:
+
+  dokku:
+    image: dokku/dokku:0.36.7
+    deploy:
+      labels:
+        - traefik.enable=true
+        - traefik.swarm.lbswarm=false
+        - traefik.swarm.network=docker2docker
+        - traefik.http.routers.dokku.entrypoints=web,websecure
+        - traefik.http.routers.dokku.rule=Host(`dokku.docker.local`)
+        - traefik.http.services.dokku.loadbalancer.server.port=80
+        - traefik.consulcatalog.connect=true
+        - sablier.enable=true
+        - sablier.group=devsecops
+      mode: replicated
+      replicas: 1
+      endpoint_mode: vip
+      update_config:
+        parallelism: 1
+        delay: 10s
+        failure_action: rollback
+        order: stop-first
+      restart_policy:
+        condition: any
+        delay: 5s
+        window: 120s
+      resources:
+        limits:
+          memory: 2G
+          cpus: "1.0"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "200k"
+        max-file: "10"
+    environment:
+      SERVICE_NAME: dokku
+      SERVICE_TAGS: paas,deployment,heroku
+      DOKKU_HOSTNAME: dokku.docker.local
+      DOKKU_SKIP_STORAGE_CLEANUP: "true"
+      DOKKU_VHOST_ENABLE: "true"
+    privileged: true
+    volumes:
+      - dokku_data:/mnt/dokku
+      - dokku_storage:/var/lib/dokku/data/storage
+      - dokku_config:/home/dokku
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./configs/dokku.conf:/etc/dokku/dokku.conf:ro
+    # Uncomment the following lines to expose Dokku ports
+    # Note: Exposing ports is not recommended in production environments.
+    # ports:
+    #   - "80:80"
+    #   - "443:443"
+    #   - "2222:22"
+    networks:
+      - docker2docker
+
+networks:
+  docker2docker:
+    external: true
+
+volumes:
+  dokku_data:
+    driver: local
+  dokku_storage:
+    driver: local
+  dokku_config:
+    driver: local

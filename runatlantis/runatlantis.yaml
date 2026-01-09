@@ -1,0 +1,55 @@
+version: '3.9'
+
+services:
+
+  atlantis:
+    image: ghcr.io/runatlantis/atlantis
+    deploy:
+      labels:
+        - traefik.enable=true
+        - traefik.swarm.lbswarm=false
+        - traefik.swarm.network=docker2docker
+        - traefik.http.routers.atlantis_server.entrypoints=web,websecure
+        - traefik.http.routers.atlantis_server.rule=Host(`atlantis.docker.local`)
+        - traefik.http.services.atlantis_server.loadbalancer.server.port=4141
+        - traefik.consulcatalog.connect=true
+        - sablier.enable=true
+        - sablier.group=devsecops
+      replicas: 1
+      endpoint_mode: vip
+      update_config:
+        parallelism: 1
+        delay: 10s
+      restart_policy:
+        condition: any
+        delay: 5s
+        window: 120s
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 500M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "200k"
+        max-file: "10"
+    env_file:
+      - ./configs/settings.env
+    environment:
+      - ATLANTIS_GH_USER="${GITHUB_USER_ATLANTIS}"
+      - ATLANTIS_GH_TOKEN="${GITHUB_TOKEN_ATLANTIS}"
+    # ports:
+    #   - 4141:4141
+    volumes:
+      - ${HOME}/.ssh:/.ssh:ro
+      - atlantis:/src:ro
+    networks:
+      - docker2docker
+
+volumes:
+  atlantis:
+    driver: local
+
+networks:
+  docker2docker:
+    external: true

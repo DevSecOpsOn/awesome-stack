@@ -1,0 +1,69 @@
+target: all,alertmanager
+
+server:
+  http_listen_port: 8080
+  grpc_listen_port: 9009
+  log_level: info
+
+common:
+  storage:
+    backend: filesystem
+    filesystem:
+      dir: /data/mimir
+
+blocks_storage:
+  backend: filesystem
+  filesystem:
+    dir: /data/mimir/blocks
+
+ruler_storage:
+  backend: filesystem
+  filesystem:
+    dir: /data/mimir/ruler
+
+alertmanager_storage:
+  backend: filesystem
+  filesystem:
+    dir: /data/mimir/alertmanager
+
+ingester:
+  ring:
+    instance_addr: 127.0.0.1
+    kvstore:
+      store: inmemory
+    replication_factor: 1
+
+distributor:
+  ring:
+    instance_addr: 127.0.0.1
+    kvstore:
+      store: inmemory
+
+ruler:
+  enable_api: true
+  ring:
+    instance_addr: 127.0.0.1
+    kvstore:
+      store: inmemory
+
+alertmanager:
+  enable_api: true
+  external_url: http://grafana_mimir/alertmanager
+
+compactor:
+  data_dir: /data/mimir/compactor
+  sharding_ring:
+    kvstore:
+      store: inmemory
+
+store_gateway:
+  sharding_ring:
+    replication_factor: 1
+    kvstore:
+      store: inmemory
+
+limits:
+  ingestion_rate: 10000
+  ingestion_burst_size: 200000
+  max_global_series_per_user: 150000
+  max_global_series_per_metric: 20000

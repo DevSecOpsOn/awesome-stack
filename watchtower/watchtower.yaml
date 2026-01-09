@@ -1,0 +1,40 @@
+version: "3.9"
+
+services:
+
+  watchtower:
+    image: containrrr/watchtower
+    deploy:
+      labels:
+        - traefik.enable=true
+        - traefik.swarm.lbswarm=false
+        - traefik.swarm.network=docker2docker
+        - traefik.http.routers.watchtower_server.entrypoints=web,websecure
+        - traefik.http.routers.watchtower_server.rule=Host(`watchtower.docker.local`)
+        - traefik.http.services.watchtower_server.loadbalancer.server.port=0000
+        - traefik.consulcatalog.connect=true
+      replicas: 1
+      endpoint_mode: vip
+      update_config:
+        parallelism: 1
+        delay: 10s
+      restart_policy:
+        condition: any
+        delay: 5s
+        window: 120s
+      resources:
+        limits:
+          memory: 1G
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "200k"
+        max-file: "10"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - docker2docker
+
+networks:
+  docker2docker:
+    external: true

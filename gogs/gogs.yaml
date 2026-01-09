@@ -1,0 +1,61 @@
+version: '3.5'
+
+services:
+
+# Gogs SCM
+  gogs:
+    image: gogs/gogs
+    domainname: docker.local
+    deploy:
+      labels:
+        - traefik.enable=true
+        - traefik.swarm.lbswarm=false
+        - traefik.swarm.network=docker2docker
+        - traefik.http.routers.gogs_server.entrypoints=web,websecure
+        - traefik.http.routers.gogs_server.rule=Host(`gogs.docker.local`)
+        - traefik.http.services.gogs_server.loadbalancer.server.port=3000
+        - traefik.consulcatalog.connect=true
+      replicas: 1
+      endpoint_mode: vip
+      update_config:
+        parallelism: 1
+        delay: 10s
+      restart_policy:
+        condition: any
+        delay: 5s
+        window: 120s
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 500M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "200k"
+        max-file: "10"
+    environment:
+      - SERVICE_NAME=gogs
+      - SERVICE_TAGS=scm,git,web
+      - DOCKER_SECRET_DB=${DOCKER_SECRET_DB}
+    # ports:
+    #   - 10022:22
+    #   - 10880:3000
+    volumes:
+      - gogs_data:/data
+      - ./configs/app.ini:/data/gogs/conf/app.ini:rw
+    secrets:
+      - DOCKER_SECRET_DB
+    networks:
+      - docker2docker
+
+volumes:
+  gogs_data:
+    driver: local
+
+secrets:
+  DOCKER_SECRET_DB:
+    external: true
+
+networks:
+    docker2docker:
+        external: true

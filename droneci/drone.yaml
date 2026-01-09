@@ -1,0 +1,131 @@
+version: "3.9"
+
+services:
+  server_bitbucket:
+    image: drone/drone:2
+    deploy:
+      labels:
+        - traefik.enable=true
+        - traefik.swarm.lbswarm=false
+        - traefik.swarm.network=docker2docker
+        - traefik.http.routers.bitbucket_server.entrypoints=web,websecure
+        - traefik.http.routers.bitbucket_server.rule=Host(`droneci-bb.docker.local`)
+        - traefik.http.services.bitbucket_server.loadbalancer.server.port=80
+        - traefik.consulcatalog.connect=true
+      mode: replicated
+      replicas: 1
+      placement:
+        max_replicas_per_node: 1
+      endpoint_mode: vip
+      update_config:
+        parallelism: 1
+        delay: 10s
+      restart_policy:
+        condition: any
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 500M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "200k"
+        max-file: "10"
+    environment:
+      - DRONE_SERVER_HOST=${NGROK_DOMAIN_BITBUCKET}
+      - DRONE_BITBUCKET_CLIENT_ID=${DRONE_BITBUCKET_CLIENT_ID}
+      - DRONE_BITBUCKET_CLIENT_SECRET=${DRONE_BITBUCKET_CLIENT_SECRET}
+      - DRONE_DATABASE_DRIVER=postgres
+      - DRONE_DATABASE_DATASOURCE=postgres://root:${DOCKER_SECRET_DB}@db_postgres:5432/drone_bitbucket?sslmode=disable
+    env_file:
+      - ./.env/bitbucket.env
+    restart: always
+    volumes:
+      - drone-server-data:/var/lib/drone/
+    networks:
+      - docker2docker
+
+  server_github:
+    image: drone/drone:2
+    deploy:
+      labels:
+        - traefik.enable=true
+        - traefik.swarm.lbswarm=false
+        - traefik.swarm.network=docker2docker
+        - traefik.http.routers.github_server.entrypoints=web,websecure
+        - traefik.http.routers.github_server.rule=Host(`droneci-gh.docker.local`)
+        - traefik.http.services.github_server.loadbalancer.server.port=80
+        - traefik.consulcatalog.connect=true
+      mode: replicated
+      replicas: 1
+      placement:
+        max_replicas_per_node: 1
+      endpoint_mode: vip
+      update_config:
+        parallelism: 1
+        failure_action: rollback
+        delay: 10s
+      restart_policy:
+        condition: any
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 500M
+    environment:
+      - DRONE_SERVER_HOST=${TRAEFIK_HUB_GH}
+      # GitHub credentials
+      - DRONE_GITHUB_CLIENT_ID=${DRONE_GITHUB_CLIENT_ID}
+      - DRONE_GITHUB_CLIENT_SECRET=${DRONE_GITHUB_CLIENT_SECRET}
+      # PostgreSQL credentials
+      - DRONE_DATABASE_DRIVER=postgres
+      - DRONE_DATABASE_DATASOURCE=postgres://root:${DOCKER_SECRET_DB}@db_postgres:5432/drone_github?sslmode=disable
+    env_file:
+      - ./.env/github.env
+    restart: always
+    volumes:
+      - drone-server-data:/var/lib/drone/
+    networks:
+      - docker2docker
+
+  runner:
+    image: drone/drone-runner-docker:1
+    command: agent
+    deploy:
+      labels:
+        - traefik.enable=true
+        - traefik.swarm.network=docker2docker
+        - traefik.swarm.lbswarm=false
+        - traefik.http.routers.runner_agent.entrypoints=web
+        - traefik.http.routers.runner_agent.rule=Host(`droneci-runner.docker.local`) && PathPrefix(`/dashboard`)
+        - traefik.http.services.runner_agent.loadbalancer.server.port=3000
+        - traefik.consulcatalog.connect=true
+      mode: replicated
+      replicas: 1
+      placement:
+        max_replicas_per_node: 1
+      update_config:
+        parallelism: 1
+        delay: 10s
+      restart_policy:
+        condition: any
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 500M
+    env_file:
+      - ./.env/runner.env
+    restart: always
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - docker2docker
+
+volumes:
+  drone-server-data:
+    driver: local
+  db:
+    driver: local
+
+networks:
+  docker2docker:
+    external: true
