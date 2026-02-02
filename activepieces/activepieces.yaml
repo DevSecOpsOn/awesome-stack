@@ -61,7 +61,7 @@ services:
       AP_WORKER_TOKEN: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IjEifQ.eyJpZCI6Imt6UEQ2SHY2bHdmV3VpVUhBd0F2RyIsInR5cGUiOiJXT1JLRVIiLCJpYXQiOjE3NjAxMDI5OTIsImV4cCI6NDkxMzcwMjk5MiwiaXNzIjoiYWN0aXZlcGllY2VzIn0._GIaEYuxsgADXX6gF4pgoiJiucQJB1Poy2NkBKXvEjA"
       AP_TELEMETRY_ENABLED: "true"
     volumes:
-      - activepieces_data:/usr/src/app/packages/server/api/src/assets
+      - server_data:/usr/src/app/packages/server/api/src/assets
     # Uncomment the following lines to expose Activepieces ports
     # Note: Exposing ports is not recommended in production environments.
     # ports:
@@ -102,14 +102,17 @@ services:
       AP_WORKER_TOKEN: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IjEifQ.eyJpZCI6Imt6UEQ2SHY2bHdmV3VpVUhBd0F2RyIsInR5cGUiOiJXT1JLRVIiLCJpYXQiOjE3NjAxMDI5OTIsImV4cCI6NDkxMzcwMjk5MiwiaXNzIjoiYWN0aXZlcGllY2VzIn0._GIaEYuxsgADXX6gF4pgoiJiucQJB1Poy2NkBKXvEjA"
       AP_API_URL: "http://activepieces_server:80"
     volumes:
-      - activepieces_data:/usr/src/app/packages/server/api/src/assets
+      - worker_data:/usr/src/app/packages/server/api/src/assets
     networks:
       - docker2docker
+
+volumes:
+  server_data:
+    driver: local
+  worker_data:
+    driver: local
 
 networks:
   docker2docker:
     external: true
 
-volumes:
-  activepieces_data:
-    driver: local

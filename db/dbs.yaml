@@ -44,9 +44,9 @@ services:
         - traefik.enable=false
         - traefik.swarm.network=docker2docker
         - traefik.swarm.lbswarm=false
-        # - traefik.http.routers.mongodb.entrypoints=web,websecure
-        # - traefik.http.routers.mongodb.rule=Host(`mongodb.docker.local`)
-        # - traefik.http.services.mongodb.loadbalancer.server.port=27017
+        - traefik.http.routers.mongodb.entrypoints=web,websecure
+        - traefik.http.routers.mongodb.rule=Host(`mongodb.docker.local`)
+        - traefik.http.services.mongodb.loadbalancer.server.port=27017
         - traefik.tcp.routers.mongo.rule=HostSNI(`*`)
         - traefik.tcp.routers.mongo.entrypoints=mongo
         - traefik.tcp.services.mongo.loadbalancer.server.port=28017
@@ -71,6 +71,9 @@ services:
       SERVICE_TAG: db, mongodb
       MONGO_INITDB_ROOT_USERNAME: root
       MONGO_INITDB_ROOT_PASSWORD: ${DOCKER_SECRET_DB}
+    volumes:
+      - mongodb_data:/data/db:rw
+    # Uncomment this if you want to expose the MongoDB port
     ports:
       - 27017:27017
     networks:
@@ -111,7 +114,7 @@ services:
       SERVICE_TAGS: dbs,admin,mongodb
       ME_CONFIG_MONGODB_ADMINUSERNAME: root
       ME_CONFIG_MONGODB_ADMINPASSWORD: ${DOCKER_SECRET_DB}
-      ME_CONFIG_MONGODB_URL: mongodb://root:${DOCKER_SECRET_DB}@mongo:27017/
+      ME_CONFIG_MONGODB_URL: mongodb://root:${DOCKER_SECRET_DB}@db_mongo:27017/
       ME_CONFIG_BASICAUTH: "false"
     networks:
       - docker2docker
@@ -179,6 +182,8 @@ services:
       MYSQL_ROOT_PASSWORD: ${DOCKER_SECRET_DB}
       MYSQL_ROOT_HOST: '%'
     command: --bind-address=0.0.0.0
+    volumes:
+      - mysql_data:/var/lib/mysql:rw
     # Uncomment this if you want to expose the MySQL port
     # ports:
     #   - 3306
@@ -186,7 +191,7 @@ services:
       - docker2docker
 
   postgres:
-    image: postgres:14.18
+    image: postgres:18.1
     deploy:
       labels:
         - traefik.enable=false
@@ -211,6 +216,7 @@ services:
       - POSTGRES_HOST_AUTH_METHOD="trust"
       - POSTGRES_PASSWORD=${DOCKER_SECRET_DB}
     volumes:
+      - postgres_data:/var/lib/postgresql/18/docker
       # Script to create required databases on start up process
       - ./scripts/init-user-db.sh:/docker-entrypoint-initdb.d/init-user-db.sh:rw
     # Uncomment this if you want to expose the PostgreSQL port
@@ -219,6 +225,14 @@ services:
     networks:
       - docker2docker
 
+volumes:
+  mongodb_data:
+    driver: local
+  mysql_data:
+    driver: local
+  postgres_data:
+    driver: local
+
 networks:
   docker2docker:
-      external: true
+    external: true

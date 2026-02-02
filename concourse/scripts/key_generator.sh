@@ -6,6 +6,7 @@ set -e -u
 cd $(dirname $0)
 
 WORK_DIR="$PWD"
+
 _MSYSTEM="${MSYSTEM:=}"
 if [ "$_MSYSTEM" == "MINGW64" ]; then
   WORK_DIR="$(cygpath -t windows $(pwd))"
