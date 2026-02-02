@@ -51,6 +51,7 @@ services:
 
 volumes:
   dokploy_config:
+    driver: local
 
 networks:
   docker2docker:

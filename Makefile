@@ -21,7 +21,7 @@ DEVOPS := $(PROXY) $(DATABASES) $(DOCS) $(AI) $(CI_CD) $(PASS) $(INFRA) $(PORTAL
 DEVSECOPS := $(DEVOPS) $(SECURITY)
 
 # Resources to prune
-RESOURCES := container volume
+RESOURCES := container
 
 define HOST_ENTRIES
 #### docker-stack: v12 ####
@@ -57,7 +57,7 @@ endef
 export HOST_ENTRIES
 
 # Define PHONY targets to ensure they always execute
-.PHONY: all check_docker init network secrets devops devsecops podman update-hosts show-stacks vault_unseal remove-docker remove-podman droneci help
+.PHONY: all check_docker init network secrets devops devsecops podman update-hosts show-stacks vault_unseal remove-stack remove-podman droneci help
 
 # Default target (shows available parameters)
 default: help
@@ -76,13 +76,13 @@ help:
 	@echo "  podman         - Deploy stacks using Podman (when Docker daemon is not running)"
 	@echo "  update-hosts   - Update /et/hosts file with stack FQDN"
 	@echo "  show-stacks    - Show all running Docker containers"
-	@echo "  remove-docker  - Remove only the stacks defined in this Makefile"
+	@echo "  remove-stack   - Remove only the stacks defined in this Makefile"
 	@echo "  remove-podman  - Remove Podman stacks and containers"
 	@echo "---------------------------------------------------------------------------------------"
 	@echo "  🚨 At least one parameter must be provided. 🚨"
 
 # Default target (runs all steps)
-setup: check init network secrets devsecops update-hosts show-stacks
+setup: check init network secrets
 
 # Check if container engine is running
 check:
@@ -202,10 +202,10 @@ update-hosts:
 	rm -f "$$TEMP_FILE" "$$EXISTING_FILE" "$$TEMP_HOSTS"
 
 # Remove Docker stacks and containers
-remove-docker:
+remove-stack:
 
 	@echo "🧹 Removing Docker stacks and containers..."
-	@for stack in $(DEVSECOPS) $(DEVOPS); do \
+	@for stack in $(DEVSECOPS); do \
 		$(CONTAINER_ENGINE) stack ls | grep -w $$stack > /dev/null && $(CONTAINER_ENGINE) stack rm $$stack && echo "Stack $$stack removed." || echo "Stack $$stack not found, skipping."; \
 	done
 
