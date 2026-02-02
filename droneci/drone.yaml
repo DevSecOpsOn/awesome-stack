@@ -41,7 +41,7 @@ services:
       - ./.env/bitbucket.env
     restart: always
     volumes:
-      - drone-server-data:/var/lib/drone/
+      - bb_data:/var/lib/drone/
     networks:
       - docker2docker
 
@@ -83,7 +83,7 @@ services:
       - ./.env/github.env
     restart: always
     volumes:
-      - drone-server-data:/var/lib/drone/
+      - gh_data:/var/lib/drone/
     networks:
       - docker2docker
 
@@ -121,9 +121,9 @@ services:
       - docker2docker
 
 volumes:
-  drone-server-data:
+  bb_data:
     driver: local
-  db:
+  gh_data:
     driver: local
 
 networks:
