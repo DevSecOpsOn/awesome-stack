@@ -31,11 +31,15 @@ services:
       - --entrypoints.web.address=:80
       - --entrypoints.websecure.address=:443
       - --entrypoints.websecure.http.tls=true
-      - --entrypoints.mongo.address=:28017
+      - --entrypoints.websecure.http.tls.certresolver=le
       - --entryPoints.metrics.address=:8082
+      - --entrypoints.mongo.address=:28017
+      - --entrypoints.clickhouse.address=:9000
       # Tracing settings
       - --tracing=true
       - --tracing.serviceName=traefik
+      - --tracing.otlp=true
+      - --tracing.otlp.http.endpoint=otelcol_otelcol:4317/v1/trace
       # Consul KV store settings
       - --providers.consul=true
       - --providers.consul.rootKey=traefik
@@ -57,6 +61,11 @@ services:
       - --providers.consulcatalog.watch=true
       # Observability
       - "--log.level=DEBUG"
+      # let's encrypt
+      - --certificatesresolvers.le.acme.httpchallenge=true
+      - --certificatesresolvers.le.acme.httpchallenge.entrypoint=web
+      - --certificatesresolvers.le.acme.email=rdgacarvalho@gmail.com
+      - --certificatesresolvers.le.acme.storage=/letsencrypt/acme.json
     deploy:
       replicas: 1
       labels:
@@ -94,11 +103,16 @@ services:
       - 443:443
       - 8080:8080
       - 28017:28017
+      - 9000:9000
     volumes:
-      - ./letsencrypt:/letsencrypt
+      - letsencrypt:/letsencrypt
       - /var/run/docker.sock:/var/run/docker.sock
     networks:
       - docker2docker
+
+volumes:
+  letsencrypt:
+    driver: local
 
 networks:
   docker2docker:

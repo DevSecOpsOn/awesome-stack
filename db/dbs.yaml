@@ -41,7 +41,7 @@ services:
     image: mongo
     deploy:
       labels:
-        - traefik.enable=false
+        - traefik.enable=true
         - traefik.swarm.network=docker2docker
         - traefik.swarm.lbswarm=false
         - traefik.http.routers.mongodb.entrypoints=web,websecure
@@ -225,12 +225,62 @@ services:
     networks:
       - docker2docker
 
+  clickhouse:
+    image: clickhouse/clickhouse-server
+    deploy:
+      labels:
+        - traefik.enable=true
+        - traefik.tcp.routers.clickhouse.rule=HostSNI(`*`)
+        - traefik.tcp.routers.clickhouse.entrypoints=clickhouse
+        - traefik.tcp.services.clickhouse.loadbalancer.server.port=9000
+      replicas: 1
+      update_config:
+          parallelism: 1
+          delay: 10s
+      restart_policy:
+        condition: any
+        delay: 5s
+        window: 120s
+      resources:
+        limits:
+          memory: 1G
+    ulimits:
+      nproc: 65536
+      nofile: 
+        soft: 262144
+        hard: 262144
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "200k"
+        max-file: "10"
+    cap_add:
+      - SYS_NICE
+      - NET_ADMIN
+      - IPC_LOCK
+    environment:
+      - CLICKHOUSE_DB=devsecops
+      - CLICKHOUSE_USER=root
+      - CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT=1
+      - CLICKHOUSE_PASSWORD=${DOCKER_SECRET_DB}
+    volumes:
+      - clickhouse:/var/lib/clickhouse
+    # Uncomment this if you want to expose the ClickHouse port
+    # ports:
+    #   - 9000:9000
+    #   - 8123:8123
+    networks:
+      - docker2docker
+
+
 volumes:
   mongodb_data:
     driver: local
   mysql_data:
     driver: local
   postgres_data:
+    driver: local
+  clickhouse:
     driver: local
 
 networks:
