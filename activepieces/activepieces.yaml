@@ -72,6 +72,8 @@ services:
   worker:
     image: activepieces/activepieces:0.70.5
     deploy:
+      labels:
+        - traefik.enable=false
       mode: replicated
       replicas: 1
       endpoint_mode: vip
