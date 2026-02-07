@@ -117,12 +117,6 @@ services:
     networks:
       - docker2docker
 
-volumes:
-  server_data:
-    driver: local
-  worker_data:
-    driver: local
-
 networks:
     docker2docker:
         external: true

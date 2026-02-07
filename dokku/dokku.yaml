@@ -58,6 +58,10 @@ services:
     networks:
       - docker2docker
 
+networks:
+  docker2docker:
+    external: true
+
 volumes:
   dokku_data:
     driver: local
@@ -65,7 +69,3 @@ volumes:
     driver: local
   dokku_config:
     driver: local
-
-networks:
-  docker2docker:
-    external: true

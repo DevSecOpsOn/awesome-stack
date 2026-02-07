@@ -51,10 +51,10 @@ services:
     networks:
       - docker2docker
 
-volumes:
-  dozzle_data:
-    driver: local
-
 networks:
   docker2docker:
     external: true
+
+volumes:
+  dozzle_data:
+    driver: local
