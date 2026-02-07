@@ -1,0 +1,43 @@
+# Blocked Sites List - Sexual Content and Adult Sites
+# This list blocks access to adult content for kids safety
+
+# Adult Content Sites
+.pornhub.com
+.xvideos.com
+.xnxx.com
+.redtube.com
+.youporn.com
+.tube8.com
+.spankwire.com
+.keezmovies.com
+.extremetube.com
+.mofosex.com
+.xhamster.com
+.beeg.com
+.sex.com
+.porn.com
+.xxx.com
+.adult.com
+.playboy.com
+.penthouse.com
+.hustler.com
+.brazzers.com
+.bangbros.com
+.naughtyamerica.com
+.realitykings.com
+.mofos.com
+.fakehub.com
+.onlyfans.com
+
+# Dating/Hookup Sites (optional - uncomment if needed)
+.tinder.com
+.bumble.com
+.match.com
+.adultfriendfinder.com
+
+# Gambling Sites (optional - uncomment if needed)
+.bet365.com
+.888casino.com
+.pokerstars.com
+
+# Add more domains as needed

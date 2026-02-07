@@ -1,0 +1,91 @@
+version: "3.9"
+
+services:
+
+  squid:
+    image: ubuntu/squid:edge
+    deploy:
+      labels:
+        - traefik.enable=true
+        - traefik.swarm.lbswarm=false
+        - traefik.swarm.network=docker2docker
+        - traefik.http.routers.squid_proxy.entrypoints=web,websecure
+        - traefik.http.routers.squid_proxy.rule=Host(`squid.docker.local`)
+        - traefik.http.services.squid_proxy.loadbalancer.server.port=3128
+        - traefik.consulcatalog.connect=true
+      replicas: 1
+      mode: replicated
+      update_config:
+        parallelism: 1
+        delay: 10s
+        failure_action: rollback
+        order: stop-first
+      restart_policy:
+        condition: any
+        delay: 5s
+        window: 10s
+      endpoint_mode: vip
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+        labels: "service=squid"
+        tag: "{{.Name}}/{{.ID}}"
+    environment:
+      SERVICE_NAME: squid
+      SERVICE_TAGS: proxy,content-filter
+      TZ: UTC
+    volumes:
+      - ./config/squid.conf:/etc/squid/squid.conf:ro
+      - ./config/blocked_sites.txt:/etc/squid/blocked_sites.txt:ro
+      - ./config/time_restrictions.txt:/etc/squid/time_restrictions.txt:ro
+      - squid-cache:/var/spool/squid
+      - squid-logs:/var/log/squid
+    ports:
+      - 3128:3128
+    networks:
+      - docker2docker
+
+  squid-exporter:
+    image: boynux/squid-exporter:latest
+    deploy:
+      labels:
+        - traefik.enable=false
+      replicas: 1
+      mode: replicated
+      restart_policy:
+        condition: any
+        delay: 5s
+      resources:
+        limits:
+          memory: 128M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    environment:
+      SQUID_HOSTNAME: squid
+      SQUID_PORT: 3128
+      SQUID_EXPORTER_LISTEN: ":9301"
+    # ports:
+    #   - "9301:9301"
+    networks:
+      - docker2docker
+    depends_on:
+      - squid
+
+volumes:
+  squid-cache:
+    driver: local
+  squid-logs:
+    driver: local
+
+networks:
+  docker2docker:
+    external: true

@@ -119,7 +119,7 @@ services:
     environment:
       SERVICE_NAME: "tempo"
       SERVICE_TAGS: "tracing"
-    command: ["-target=distributor -config.file=/etc/tempo.yaml"]
+    command: ["-config.file=/etc/tempo.yaml"]
     volumes:
       - ./config/tempo/tempo.yaml:/etc/tempo.yaml
       - tempo_data:/tmp/tempo
