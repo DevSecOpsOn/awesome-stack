@@ -5,7 +5,6 @@ CONTAINER_ENGINE := $(if $(DOCKER_CLI),$(DOCKER_CLI),$(if $(PODMAN_CLI),$(PODMAN
 SWARM_ADDR_ := $(shell ifconfig | grep -E "inet 192.168.2" | awk '{print $$2}')
 # Stack list
 AI := activepieces n8n
-AIML := aiml
 PROXY := traefik ngrok
 DATABASES := db redis
 DOCS := hedgedoc
@@ -18,7 +17,7 @@ VCS := gogs gitea
 SECURITY := vault passbolt
 BACKUP := repliqate
 STORAGE := minio
-DEVOPS := $(PROXY) $(DATABASES) $(DOCS) $(AI) $(AIML) $(CI_CD) $(PASS) $(INFRA) $(PORTALS) $(OBSERVABILITY) $(VCS) $(STORAGE)
+DEVOPS := $(PROXY) $(DATABASES) $(DOCS) $(AI) $(CI_CD) $(PASS) $(INFRA) $(PORTALS) $(OBSERVABILITY) $(VCS) $(STORAGE)
 DEVSECOPS := $(DEVOPS) $(SECURITY)
 
 # Resources to prune
@@ -28,10 +27,8 @@ define HOST_ENTRIES
 #### docker-stack: v12 ####
 # AI 
 127.0.0.1 activepieces.docker.local n8n.docker.local hedgedoc.docker.local
-# AI/ML
-127.0.0.1 langchain.docker.local qwen.docker.local pytorch.docker.local tensorflow.docker.local airflow.docker.local
 # Databases
-127.0.0.1 mongodb.docker.local mongo-express.docker.local mongo-compass.docker.local redis.docker.local clickhouse.docker.local
+127.0.0.1 mongodb.docker.local mongo-express.docker.local mongo-compass.docker.local redis.docker.local
 # Ingress & Proxy stack
 127.0.0.1 traefik.swarm.local haproxy.docker.local
 127.0.0.1 ngrok-bb.docker.local ngrok-gh.docker.local
