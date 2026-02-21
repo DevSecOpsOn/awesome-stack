@@ -3,6 +3,9 @@ version: '3.9'
 services:
   otelcol:
     image: otel/opentelemetry-collector-contrib:latest
+    labels:
+      - sablier.enable=true
+      - sablier.group=observability
     deploy:
       labels:
         - traefik.enable=true

@@ -34,7 +34,7 @@ services:
       SERVICE_TAGS: "logs"
     command: -config.file=/etc/loki/local-config.yaml
     volumes:
-      - ./config/loki/local-config.yaml:/etc/loki/local-config.yaml
+      - ./config/loki/local-config.yaml:/etc/loki/local-config.yaml:rw
     # ports:
     #   - "3100:3100"
     networks:
@@ -70,10 +70,10 @@ services:
     environment:
       SERVICE_NAME: "alloy"
       SERVICE_TAGS: "alloy,logs"
+    command: run --server.http.listen-addr=0.0.0.0:12345 --storage.path=/var/lib/alloy/data /etc/alloy/config.alloy
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./config/alloy/config.alloy:/etc/alloy/config.alloy:rw
-    command: run --server.http.listen-addr=0.0.0.0:12345 --storage.path=/var/lib/alloy/data /etc/alloy/config.alloy
     networks:
       - docker2docker
 
@@ -119,9 +119,9 @@ services:
     environment:
       SERVICE_NAME: "tempo"
       SERVICE_TAGS: "tracing"
-    command: ["-target=distributor -config.file=/etc/tempo.yaml"]
+    command: ["-config.file=/etc/tempo.yaml"]
     volumes:
-      - ./config/tempo/tempo.yaml:/etc/tempo.yaml
+      - ./config/tempo/tempo.yaml:/etc/tempo.yaml:rw
       - tempo_data:/tmp/tempo
     user: "0:0"
     # ports:
@@ -177,7 +177,7 @@ services:
       SERVICE_TAGS: "metrics,storage"
     command: ["-config.file=/etc/mimir.yaml"]
     volumes:
-      - ./config/mimir/mimir.yaml:/etc/mimir.yaml
+      - ./config/mimir/mimir.yaml:/etc/mimir.yaml:rw
       - mimir_data:/data
     user: "0:0"
     # ports:

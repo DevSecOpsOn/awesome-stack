@@ -6,6 +6,9 @@ services:
     # image: passbolt/passbolt:latest-ce
     #Alternatively you can use rootless:
     image: passbolt/passbolt:latest-ce-non-root
+    labels:
+      - sablier.enable=true
+      - sablier.group=security
     deploy:
       labels:
         - traefik.enable=true
@@ -15,8 +18,6 @@ services:
         - traefik.http.routers.passbolt_server.rule=Host(`passbolt.docker.local`)
         - traefik.http.services.passbolt_server.loadbalancer.server.port=8080
         - traefik.consulcatalog.connect=true
-        - sablier.enable=true
-        - sablier.group=devsecops
       replicas: 1
       endpoint_mode: vip
       update_config:

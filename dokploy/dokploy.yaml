@@ -4,6 +4,9 @@ services:
 
   dokploy:
     image: dokploy/dokploy:latest
+    labels:
+      - sablier.enable=true
+      - sablier.group=ai
     deploy:
       labels:
         - traefik.enable=true
@@ -13,8 +16,6 @@ services:
         - traefik.http.routers.dokploy.rule=Host(`dokploy.docker.local`)
         - traefik.http.services.dokploy.loadbalancer.server.port=3000
         - traefik.consulcatalog.connect=true
-        - sablier.enable=true
-        - sablier.group=devsecops
       replicas: 1
       mode: replicated
       endpoint_mode: vip

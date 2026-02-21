@@ -3,6 +3,9 @@ version: "3.9"
 services:
   homarr:
     image: ghcr.io/homarr-labs/homarr:latest
+    labels:
+      - sablier.enable=false
+      - sablier.group=portals
     deploy:
       labels:
         - traefik.enable=true

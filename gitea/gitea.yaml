@@ -4,6 +4,9 @@ services:
 
   server:
     image: gitea/gitea:1.24
+    labels:
+      - sablier.enable=true
+      - sablier.group=cicd
     deploy:
       labels:
         - traefik.enable=true
@@ -55,6 +58,9 @@ services:
 
   runner:
     image: gitea/act_runner:0.2.12
+    labels:
+      - sablier.enable=true
+      - sablier.group=cicd
     deploy:
       labels:
         - traefik.enable=false

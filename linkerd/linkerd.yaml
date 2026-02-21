@@ -5,6 +5,9 @@ services:
 # Linked Admin
   linkerd:
     image: buoyantio/linkerd:nightly
+    labels:
+      - sablier.enable=true
+      - sablier.group=mesh
     deploy:
       labels:
         - traefik.enable=true
@@ -14,8 +17,6 @@ services:
         - traefik.http.routers.linkerd_mesh.rule=Host(`linkerd.docker.local`)
         - traefik.http.services.linkerd_mesh.loadbalancer.server.port=9990
         - traefik.consulcatalog.connect=true
-        - sablier.enable=true
-        - sablier.group=devsecops
       replicas: 1
       endpoint_mode: vip
       update_config:

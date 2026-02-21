@@ -4,6 +4,9 @@ services:
 
   server:
     image: henrygd/beszel:latest
+    labels:
+      - sablier.enable=true
+      - sablier.group=monitoring
     deploy:
       labels:
         - traefik.enable=true
@@ -13,8 +16,6 @@ services:
         - traefik.http.routers.beszel_mon.rule=Host(`beszel.docker.local`)
         - traefik.http.services.beszel_mon.loadbalancer.server.port=8090
         - traefik.consulcatalog.connect=true
-        - sablier.enable=true
-        - sablier.group=devsecops
       replicas: 1
       endpoint_mode: vip
       update_config:

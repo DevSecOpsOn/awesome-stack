@@ -16,8 +16,13 @@ services:
       - --api.insecure=true
       - --api.dashboard=true
       # Docker provider settings
+      - --providers.docker=true
+      - --providers.docker.endpoint=unix:///var/run/docker.sock
+      - --providers.docker.watch=true
+      - --providers.docker.exposedbydefault=false
+      - --providers.swarm=true
       - --providers.swarm.watch=true
-      - --providers.swarm.exposedbydefault=true
+      - --providers.swarm.exposedbydefault=false
       - --providers.swarm.network=docker2docker
       - --providers.swarm.endpoint=unix:///var/run/docker.sock
       # Prometheus metrics settings

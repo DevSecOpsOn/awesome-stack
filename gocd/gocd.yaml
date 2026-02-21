@@ -4,6 +4,9 @@ services:
 
   server:
     image: gocd/gocd-server:v25.3.0
+    labels:
+      - sablier.enable=true
+      - sablier.group=cicd
     deploy:
       labels:
         - traefik.enable=true
@@ -13,8 +16,6 @@ services:
         - traefik.http.routers.gocd_server.rule=Host(`gocd.docker.local`)
         - traefik.http.services.gocd_server.loadbalancer.server.port=8153
         - traefik.consulcatalog.connect=true
-        - sablier.enable=true
-        - sablier.group=devsecops
       mode: replicated
       replicas: 1
       update_config:
@@ -40,6 +41,9 @@ services:
 
   agent1:
     image: gocd/gocd-agent-alpine:v25.3.0
+    labels:
+      - sablier.enable=true
+      - sablier.group=cicd
     deploy:
       labels:
         - "traefik.enable=false"

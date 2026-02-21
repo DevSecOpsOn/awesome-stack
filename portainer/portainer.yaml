@@ -3,7 +3,9 @@ version: "3.9"
 services:
   server:
     image: portainer/portainer-ce
-    command: -H tcp://tasks.agent:9001 --tlsskipverify
+    labels:
+      - sablier.enable=true
+      - sablier.group=portals
     deploy:
       labels:
         - traefik.enable=true
@@ -12,8 +14,6 @@ services:
         - traefik.http.routers.server.entrypoints=web,websecure
         - traefik.http.routers.server.rule=Host(`portainer.docker.local`)
         - traefik.http.services.server.loadbalancer.server.port=9000
-        - sablier.enable=true
-        - sablier.group=devsecops
       replicas: 1
       mode: replicated
       endpoint_mode: vip
@@ -32,6 +32,7 @@ services:
       options:
         max-size: "200k"
         max-file: "10"
+    command: -H tcp://tasks.agent:9001 --tlsskipverify
     # ports:
     #   - 9000:9000
     volumes:
@@ -42,6 +43,9 @@ services:
 
   agent:
     image: portainer/agent
+    labels:
+      - sablier.enable=true
+      - sablier.group=portals
     deploy:
       labels:
         - "traefik.enable=false"

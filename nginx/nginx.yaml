@@ -4,6 +4,9 @@ services:
 
   portal1:
     image: traefik/whoami
+    labels:
+      - sablier.enable=true
+      - sablier.group=test
     deploy:
       labels:
         # Enable Traefik for this service
@@ -45,6 +48,9 @@ services:
 
   portal2:
     image: traefik/whoami
+    labels:
+      - sablier.enable=true
+      - sablier.group=test
     deploy:
       labels:
         # Enable Traefik for this service

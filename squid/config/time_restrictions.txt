@@ -1,0 +1,18 @@
+# Time Restrictions Configuration
+# YouTube and TikTok: 2 hours daily (16:00-18:00)
+
+# This file documents the time restrictions applied in squid.conf
+# Actual restrictions are configured via ACLs in squid.conf
+
+# YouTube domains:
+# - youtube.com
+# - googlevideo.com
+# - ytimg.com
+
+# TikTok domains:
+# - tiktok.com
+# - tiktokcdn.com
+# - musical.ly
+
+# Allowed time: Monday-Sunday 16:00-18:00 (2 hours)
+# Outside this window, access is blocked

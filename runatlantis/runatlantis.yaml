@@ -4,6 +4,9 @@ services:
 
   atlantis:
     image: ghcr.io/runatlantis/atlantis
+    labels:
+      - sablier.enable=true
+      - sablier.group=iac
     deploy:
       labels:
         - traefik.enable=true
@@ -13,8 +16,6 @@ services:
         - traefik.http.routers.atlantis_server.rule=Host(`atlantis.docker.local`)
         - traefik.http.services.atlantis_server.loadbalancer.server.port=4141
         - traefik.consulcatalog.connect=true
-        - sablier.enable=true
-        - sablier.group=devsecops
       replicas: 1
       endpoint_mode: vip
       update_config:

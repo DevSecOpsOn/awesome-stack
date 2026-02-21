@@ -4,6 +4,9 @@ services:
 
   server:
     image: "jetbrains/teamcity-server:2025.07"
+    labels:
+      - sablier.enable=true
+      - sablier.group=cicd
     deploy:
       labels:
         - traefik.enable=true
@@ -13,8 +16,6 @@ services:
         - traefik.http.routers.teamcity_server.rule=Host(`teamcity.docker.local`)
         - traefik.http.services.teamcity_server.loadbalancer.server.port=8111
         - traefik.consulcatalog.connect=true
-        - sablier.enable=true
-        - sablier.group=devsecops
       mode: replicated
       replicas: 1
       update_config:

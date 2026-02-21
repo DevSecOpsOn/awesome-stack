@@ -3,6 +3,9 @@ version: "3.9"
 services:
   server_bitbucket:
     image: drone/drone:2
+    labels:
+      - sablier.enable=false
+      - sablier.group=cicd
     deploy:
       labels:
         - traefik.enable=true
@@ -47,6 +50,9 @@ services:
 
   server_github:
     image: drone/drone:2
+    labels:
+      - sablier.enable=true
+      - sablier.group=cicd
     deploy:
       labels:
         - traefik.enable=true

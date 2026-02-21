@@ -6,7 +6,7 @@ SWARM_ADDR_ := $(shell ifconfig | grep -E "inet 192.168.2" | awk '{print $$2}')
 # Stack list
 AI := activepieces n8n
 AIML := aiml
-PROXY := traefik ngrok
+PROXY := traefik ngrok squid
 DATABASES := db redis
 DOCS := hedgedoc
 CI_CD := concourse droneci harness gocd jenkins teamcity
@@ -20,20 +20,21 @@ BACKUP := repliqate
 STORAGE := minio
 DEVOPS := $(PROXY) $(DATABASES) $(DOCS) $(AI) $(AIML) $(CI_CD) $(PASS) $(INFRA) $(PORTALS) $(OBSERVABILITY) $(VCS) $(STORAGE)
 DEVSECOPS := $(DEVOPS) $(SECURITY)
+HOSTS_VERSION := v15
 
 # Resources to prune
-RESOURCES := container
+RESOURCES := container network volume
 
 define HOST_ENTRIES
-#### docker-stack: v12 ####
-# AI 
+#### docker-stack: $(HOSTS_VERSION) ####
+# AI
 127.0.0.1 activepieces.docker.local n8n.docker.local hedgedoc.docker.local
 # AI/ML
 127.0.0.1 langchain.docker.local qwen.docker.local pytorch.docker.local tensorflow.docker.local airflow.docker.local
 # Databases
 127.0.0.1 mongodb.docker.local mongo-express.docker.local mongo-compass.docker.local redis.docker.local clickhouse.docker.local
 # Ingress & Proxy stack
-127.0.0.1 traefik.swarm.local haproxy.docker.local
+127.0.0.1 traefik.docker.local haproxy.docker.local squid.docker.local
 127.0.0.1 ngrok-bb.docker.local ngrok-gh.docker.local
 # Infrastructure stack
 127.0.0.1 atlantis.docker.local coolify.docker.local consul.docker.local dokku.docker.local dokploy.docker.local easypanel.docker.local kamal.docker.local sablier.docker.local
@@ -175,7 +176,7 @@ update-hosts:
 	@echo "Checking /etc/hosts for Docker stack entries ..."
 	@BACKUP_DATE=$$(date "+%Y%m%d_%H%M%S"); \
 	BACKUP_FILE="/etc/hosts_back_$$BACKUP_DATE"; \
-	START_MARKER="#### docker-stack: v3 ####"; \
+	START_MARKER="#### docker-stack: $(HOSTS_VERSION) ####"; \
 	END_MARKER="#### docker-stack ####"; \
 	TEMP_FILE="/tmp/hosts_entries_$$$$"; \
 	EXISTING_FILE="/tmp/existing_entries_$$$$"; \

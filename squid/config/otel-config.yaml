@@ -1,0 +1,77 @@
+# OpenTelemetry Collector configuration for Squid Proxy
+# Note: Squid doesn't natively support OpenTelemetry tracing
+# This config is for future instrumentation or sidecar pattern
+
+receivers:
+  # Receive traces from instrumented applications
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+  # Prometheus receiver for metrics
+  prometheus:
+    config:
+      scrape_configs:
+        - job_name: 'squid-exporter'
+          scrape_interval: 30s
+          static_configs:
+            - targets: ['squid-exporter:9301']
+
+processors:
+  batch:
+    timeout: 10s
+    send_batch_size: 1024
+
+  resource:
+    attributes:
+      - key: service.name
+        value: squid
+        action: upsert
+      - key: service.namespace
+        value: proxy
+        action: upsert
+      - key: deployment.environment
+        value: production
+        action: upsert
+
+  attributes:
+    actions:
+      - key: component
+        value: proxy
+        action: insert
+
+exporters:
+  # Export to Grafana Tempo
+  otlp/tempo:
+    endpoint: tempo:4317
+    tls:
+      insecure: true
+
+  # Export to main OpenTelemetry Collector
+  otlp/collector:
+    endpoint: otelcol:4317
+    tls:
+      insecure: true
+
+  # Prometheus exporter
+  prometheus:
+    endpoint: "0.0.0.0:8889"
+
+  # Logging exporter for debugging
+  logging:
+    loglevel: info
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [batch, resource, attributes]
+      exporters: [otlp/tempo, otlp/collector, logging]
+
+    metrics:
+      receivers: [otlp, prometheus]
+      processors: [batch, resource]
+      exporters: [otlp/collector, prometheus, logging]

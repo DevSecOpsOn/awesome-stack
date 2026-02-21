@@ -4,6 +4,9 @@ services:
 
   easypanel:
     image: easypanel/easypanel:latest
+    labels:
+      - sablier.enable=true
+      - sablier.group=ai
     deploy:
       labels:
         - traefik.enable=true
@@ -13,8 +16,6 @@ services:
         - traefik.http.routers.easypanel.rule=Host(`easypanel.docker.local`)
         - traefik.http.services.easypanel.loadbalancer.server.port=3000
         - traefik.consulcatalog.connect=true
-        - sablier.enable=true
-        - sablier.group=devsecops
       mode: replicated
       replicas: 1
       endpoint_mode: vip

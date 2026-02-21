@@ -5,7 +5,9 @@ services:
 # Gogs SCM
   gogs:
     image: gogs/gogs
-    domainname: docker.local
+    labels:
+      - sablier.enable=true
+      - sablier.group=vcs
     deploy:
       labels:
         - traefik.enable=true
@@ -28,6 +30,7 @@ services:
         limits:
           cpus: '1.0'
           memory: 500M
+    domainname: docker.local
     logging:
       driver: "json-file"
       options:

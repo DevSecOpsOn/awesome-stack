@@ -4,6 +4,9 @@ services:
 
   prometheus:
     image: prom/prometheus:latest
+    labels:
+      - sablier.enable=false
+      - sablier.group=monitoring
     deploy:
       labels:
         - traefik.enable=true
@@ -28,6 +31,9 @@ services:
       resources:
         limits:
           memory: 1G
+      placement:
+        constraints:
+          - node.role == manager
     logging:
       driver: "json-file"
       options:
@@ -46,9 +52,10 @@ services:
       - '--web.external-url=http://prometheus.docker.local'
     volumes:
       - prometheus-data:/prometheus
-      - ./config/prometheus.yml:/etc/prometheus/prometheus.yml:ro
-      - ./config/prometheus-token:/etc/prometheus/prometheus-token:ro
-      - ./config/alert_rules.yml:/etc/prometheus/alert_rules.yml:ro
+      - ./config/scrape_config.yml:/etc/prometheus/prometheus.yml:rw
+      - ./config/prometheus-token:/etc/prometheus/prometheus-token:rw
+      - ./config/alert_rules.yml:/etc/prometheus/alert_rules.yml:rw
+      - /var/run/docker.sock:/varv/run/docker.sock
     # ports:
     #   - 9090:9090
     networks:
@@ -56,6 +63,9 @@ services:
 
   alertmanager:
     image: prom/alertmanager:latest
+    labels:
+      - sablier.enable=false
+      - sablier.group=monitoring
     deploy:
       labels:
         - traefik.enable=true
