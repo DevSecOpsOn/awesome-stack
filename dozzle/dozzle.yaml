@@ -4,6 +4,9 @@ services:
 
   dozzle:
     image: amir20/dozzle:latest
+    labels:
+      - sablier.enable=true
+      - sablier.group=monitoring
     deploy:
       labels:
         - traefik.enable=true

@@ -4,6 +4,9 @@ services:
 
   jaeger-all-in-one:
     image: jaegertracing/all-in-one:latest
+    labels:
+      - sablier.enable=true
+      - sablier.group=observability
     deploy:
       labels:
         - traefik.enable=true
@@ -56,6 +59,9 @@ services:
 
   jaeger-query:
     image: jaegertracing/jaeger-query:latest
+    labels:
+      - sablier.enable=true
+      - sablier.group=observability
     deploy:
       labels:
         - traefik.enable=true

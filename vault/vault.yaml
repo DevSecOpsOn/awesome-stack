@@ -4,6 +4,9 @@ services:
 
   server:
     image: hashicorp/vault:1.20
+    labels:
+      - sablier.enable=false
+      - sablier.group=security
     cap_add:
       - IPC_LOCK
     deploy:

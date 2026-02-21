@@ -4,7 +4,9 @@ services:
 
   bitbucket:
     image: webhookrelay/webhookrelayd:latest
-    network_mode: host
+    labels:
+      - sablier.enable=true
+      - sablier.group=proxy
     deploy:
       labels:
         - traefik.enable=false
@@ -21,7 +23,7 @@ services:
         limits:
           cpus: '0.90'
           memory: 1G
-    restart: always
+    network_mode: host
     command:
       - --mode
       - tunnel
@@ -30,7 +32,9 @@ services:
 
   github:
     image: webhookrelay/webhookrelayd:latest
-    network_mode: host
+    labels:
+      - sablier.enable=true
+      - sablier.group=proxy
     deploy:
       labels:
         - traefik.enable=false
@@ -45,7 +49,7 @@ services:
         limits:
           cpus: '0.90'
           memory: 1G
-    restart: always
+    network_mode: host
     command:
       - --mode
       - tunnel

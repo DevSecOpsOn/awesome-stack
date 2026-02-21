@@ -4,6 +4,9 @@ services:
 
   fluentbit:
     image: fluent/fluent-bit:latest
+    labels:
+      - sablier.enable=true
+      - sablier.group=logging
     deploy:
       labels:
         - traefik.enable=true

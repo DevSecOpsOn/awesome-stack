@@ -4,6 +4,9 @@ services:
 
   komiser:
     image: tailwarden/komiser:latest
+    labels:
+      - sablier.enable=true
+      - sablier.group=cloud
     deploy:
       labels:
         - traefik.enable=true

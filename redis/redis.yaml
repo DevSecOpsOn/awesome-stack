@@ -4,6 +4,9 @@ services:
 
   server:
     image: redis:7.4-alpine
+    labels:
+      - sablier.enable=false
+      - sablier.group=database
     deploy:
       labels:
         - traefik.enable=false
@@ -36,6 +39,9 @@ services:
 
   insight:
     image: redis/redisinsight:latest
+    labels:
+      - sablier.enable=true
+      - sablier.group=database
     deploy:
       labels:
         - traefik.enable=true

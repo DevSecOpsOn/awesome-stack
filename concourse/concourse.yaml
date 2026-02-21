@@ -4,6 +4,9 @@ services:
 
   web:
     image: concourse/concourse:7.14.1
+    labels:
+      - sablier.enable=true
+      - sablier.group=cicd
     deploy:
       labels:
         - traefik.enable=true
@@ -13,8 +16,6 @@ services:
         - traefik.http.routers.concourse_web.rule=Host(`concourse.docker.local`)
         - traefik.http.services.concourse_web.loadbalancer.server.port=8080
         - traefik.consulcatalog.connect=true
-        - sablier.enable=true
-        - sablier.group=devsecops
       mode: replicated
       replicas: 1
       update_config:
@@ -63,6 +64,9 @@ services:
   worker:
     image: concourse/concourse:7.14.1
     user: root
+    labels:
+      - sablier.enable=true
+      - sablier.group=ci
     deploy:
       labels:
         - traefik.enable=true

@@ -4,7 +4,9 @@ services:
 
   bitbucket:
     image: ngrok/ngrok:latest
-    restart: unless-stopped
+    labels:
+      - sablier.enable=false
+      - sablier.group=proxy
     deploy:
       labels:
         - traefik.enable=true
@@ -48,7 +50,9 @@ services:
 
   github:
     image: ngrok/ngrok:latest
-    restart: unless-stopped
+    labels:
+      - sablier.enable=true
+      - sablier.group=proxy
     deploy:
       labels:
         - traefik.enable=true

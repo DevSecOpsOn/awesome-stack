@@ -4,6 +4,9 @@ services:
 
   localstack:
     image: localstack/localstack
+    labels:
+      - sablier.enable=true
+      - sablier.group=cloud
     deploy:
       labels:
         - SERVICE_IGNORE=false

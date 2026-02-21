@@ -4,6 +4,9 @@ services:
 
   minio:
     image: minio/minio:latest
+    labels:
+      - sablier.enable=true
+      - sablier.group=storage
     deploy:
       labels:
         - traefik.enable=true

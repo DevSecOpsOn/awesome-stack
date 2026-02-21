@@ -4,6 +4,9 @@ services:
 
   adminer:
     image: adminer:standalone
+    labels:
+      - sablier.enable=true
+      - sablier.group=portals
     deploy:
       labels:
         - traefik.enable=true
@@ -81,6 +84,9 @@ services:
 
   mongo-express:
     image: mongo-express
+    labels:
+      - sablier.enable=true
+      - sablier.group=portals
     deploy:
       labels:
         - traefik.enable=true
@@ -90,8 +96,6 @@ services:
         - traefik.http.routers.mongo_express_ui.rule=Host(`mongo-express.docker.local`)
         - traefik.http.services.mongo_express_ui.loadbalancer.server.port=8081
         - traefik.consulcatalog.connect=true
-        - sablier.enable=true
-        - sablier.group=databases
       replicas: 1
       mode: replicated
       endpoint_mode: vip
@@ -121,6 +125,9 @@ services:
 
   mongo-compass:
     image: mongodb/mongodb-community-server:latest
+    labels:
+      - sablier.enable=true
+      - sablier.group=portals
     deploy:
       labels:
         - traefik.enable=true
@@ -130,8 +137,6 @@ services:
         - traefik.http.routers.mongo_compass_ui.rule=Host(`mongo-compass.docker.local`)
         - traefik.http.services.mongo_compass_ui.loadbalancer.server.port=27017
         - traefik.consulcatalog.connect=true
-        - sablier.enable=true
-        - sablier.group=databases
       replicas: 1
       mode: replicated
       endpoint_mode: vip
@@ -246,7 +251,7 @@ services:
           memory: 1G
     ulimits:
       nproc: 65536
-      nofile: 
+      nofile:
         soft: 262144
         hard: 262144
     logging:

@@ -4,6 +4,9 @@ services:
 
   watchtower:
     image: containrrr/watchtower
+    labels:
+      - sablier.enable=true
+      - sablier.group=miscelaneous
     deploy:
       labels:
         - traefik.enable=true

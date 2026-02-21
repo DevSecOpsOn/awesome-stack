@@ -3,6 +3,9 @@ version: "3.9"
 services:
   hedgedoc:
     image: quay.io/hedgedoc/hedgedoc:1.10.5
+    labels:
+      - sablier.enable=true
+      - sablier.group=docs
     deploy:
       labels:
         - traefik.enable=true
@@ -12,8 +15,6 @@ services:
         - traefik.http.routers.hedgedoc_server.rule=Host(`hedgedoc.docker.local`)
         - traefik.http.services.hedgedoc_server.loadbalancer.server.port=3000
         - traefik.consulcatalog.connect=true
-        - sablier.enable=true
-        - sablier.group=devsecops
       replicas: 1
       endpoint_mode: vip
       update_config:

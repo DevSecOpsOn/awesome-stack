@@ -4,6 +4,9 @@ services:
 
   n8n:
     image: n8nio/n8n:latest
+    labels:
+      - sablier.enable=true
+      - sablier.group=ai
     deploy:
       labels:
         - traefik.enable=true

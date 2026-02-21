@@ -4,6 +4,9 @@ services:
 
   server:
     image: activepieces/activepieces:0.70.5
+    labels:
+      - sablier.enable=true
+      - sablier.group=serverless
     deploy:
       labels:
         - traefik.enable=true
@@ -13,8 +16,6 @@ services:
         - traefik.http.routers.activepieces.rule=Host(`activepieces.docker.local`)
         - traefik.http.services.activepieces.loadbalancer.server.port=80
         - traefik.consulcatalog.connect=true
-        - sablier.enable=true
-        - sablier.group=devsecops
       mode: replicated
       replicas: 1
       endpoint_mode: vip
@@ -71,6 +72,9 @@ services:
 
   worker:
     image: activepieces/activepieces:0.70.5
+    labels:
+      - sablier.enable=true
+      - sablier.group=serverless
     deploy:
       labels:
         - traefik.enable=false
@@ -117,4 +121,3 @@ volumes:
 networks:
   docker2docker:
     external: true
-
