@@ -1,6 +1,7 @@
-version: "3.9"
+
 
 services:
+
   server_bitbucket:
     image: drone/drone:2
     labels:

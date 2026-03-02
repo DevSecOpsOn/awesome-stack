@@ -10,20 +10,21 @@ PROXY := traefik ngrok squid
 DATABASES := db redis
 DOCS := hedgedoc
 CI_CD := concourse droneci harness gocd jenkins teamcity
-INFRA := consul localstack runatlantis watchtower sablier
-OBSERVABILITY := beszel dozzle elfk grafana jaeger otelcol prometheus
+INFRA := consul localstack runatlantis sablier
+MONITORING := beszel dozzle grafana jaeger otelcol prometheus
+OBSERVABILITY := elfk
 PASS := dokku dokploy
 PORTALS := homarr portainer
 VCS := gogs gitea
 SECURITY := vault passbolt
 BACKUP := repliqate
 STORAGE := minio
-DEVOPS := $(PROXY) $(DATABASES) $(DOCS) $(AI) $(AIML) $(CI_CD) $(PASS) $(INFRA) $(PORTALS) $(OBSERVABILITY) $(VCS) $(STORAGE)
-DEVSECOPS := $(DEVOPS) $(SECURITY)
+DEVOPS := $(PROXY) $(DATABASES) $(CI_CD) $(PASS) $(INFRA) $(PORTALS) $(MONITORING) $(VCS) $(STORAGE)
+DEVSECOPS := $(DEVOPS) $(OBSERVABILITY) $(SECURITY)
 HOSTS_VERSION := v15
 
 # Resources to prune
-RESOURCES := container network volume
+RESOURCES := container volume image
 
 define HOST_ENTRIES
 #### docker-stack: $(HOSTS_VERSION) ####
@@ -86,7 +87,7 @@ help:
 	@echo "  🚨 At least one parameter must be provided. 🚨"
 
 # Default target (runs all steps)
-setup: check init network secrets
+setup: check init network secrets devops
 
 # Check if container engine is running
 check:

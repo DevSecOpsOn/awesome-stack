@@ -1,4 +1,4 @@
-version: '3.6'
+
 
 services:
 
@@ -120,45 +120,6 @@ services:
       ME_CONFIG_MONGODB_ADMINPASSWORD: ${DOCKER_SECRET_DB}
       ME_CONFIG_MONGODB_URL: mongodb://root:${DOCKER_SECRET_DB}@db_mongo:27017/
       ME_CONFIG_BASICAUTH: "false"
-    networks:
-      - docker2docker
-
-  mongo-compass:
-    image: mongodb/mongodb-community-server:latest
-    labels:
-      - sablier.enable=true
-      - sablier.group=portals
-    deploy:
-      labels:
-        - traefik.enable=true
-        - traefik.swarm.lbswarm=false
-        - traefik.swarm.network=docker2docker
-        - traefik.http.routers.mongo_compass_ui.entrypoints=web,websecure
-        - traefik.http.routers.mongo_compass_ui.rule=Host(`mongo-compass.docker.local`)
-        - traefik.http.services.mongo_compass_ui.loadbalancer.server.port=27017
-        - traefik.consulcatalog.connect=true
-      replicas: 1
-      mode: replicated
-      endpoint_mode: vip
-      update_config:
-        parallelism: 1
-        delay: 10s
-      restart_policy:
-          condition: any
-      resources:
-        limits:
-          cpus: '1.0'
-          memory: 500M
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "200k"
-        max-file: "10"
-    environment:
-      SERVICE_NAME: mongo-compass
-      SERVICE_TAGS: dbs,admin,mongodb
-      MONGODB_INITDB_ROOT_USERNAME: root
-      MONGODB_INITDB_ROOT_PASSWORD: ${DOCKER_SECRET_DB}
     networks:
       - docker2docker
 
