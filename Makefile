@@ -12,7 +12,7 @@ DOCS := hedgedoc
 CI_CD := concourse droneci harness gocd jenkins teamcity
 INFRA := consul localstack runatlantis sablier
 MONITORING := beszel dozzle grafana jaeger otelcol prometheus
-OBSERVABILITY := elfk
+OBSERVABILITY :=
 PASS := dokku dokploy
 PORTALS := homarr portainer
 VCS := gogs gitea
@@ -87,7 +87,7 @@ help:
 	@echo "  🚨 At least one parameter must be provided. 🚨"
 
 # Default target (runs all steps)
-setup: check init network secrets devops
+setup: check init network secrets
 
 # Check if container engine is running
 check:
@@ -105,8 +105,9 @@ init:
 # Create a container network with overlay driver and attachable parameter
 network:
 
+	@$(CONTAINER_ENGINE) network ls | grep 'docker2docker' || $(CONTAINER_ENGINE) network create --driver=bridge --attachable --ipv6=true  --ipam-driver=default --scope=local compose2compose
 	@$(CONTAINER_ENGINE) network ls | grep 'docker2docker' || $(CONTAINER_ENGINE) network create --driver=overlay --subnet 10.1.0.0/16 --attachable --ipv6=true  --ipam-driver=default --scope=swarm docker2docker
-	@echo "🎯 Container network 'docker2docker' created or already exists."
+	@echo "🎯 Container network 'compose2compose' and 'docker2docker' created or already exists."
 
 # Create a container secret for the database password
 secrets:

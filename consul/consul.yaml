@@ -75,9 +75,8 @@ services:
 
 volumes:
   server_data:
-    external: true
   agent_data:
-    external: true
+
 
 networks:
   docker2docker:

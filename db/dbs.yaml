@@ -4,6 +4,7 @@ services:
 
   adminer:
     image: adminer:standalone
+    container_name: adminer
     labels:
       - sablier.enable=true
       - sablier.group=portals
@@ -37,11 +38,14 @@ services:
     environment:
       SERVICE_NAME: adminer
       SERVICE_TAGS: dbs,admin
+    # ports:
+    #   - 8080:8080
     networks:
       - docker2docker
 
   mongo:
     image: mongo
+    container_name: mongo
     deploy:
       labels:
         - traefik.enable=true
@@ -84,6 +88,7 @@ services:
 
   mongo-express:
     image: mongo-express
+    container_name: mongo-express
     labels:
       - sablier.enable=true
       - sablier.group=portals
@@ -118,13 +123,16 @@ services:
       SERVICE_TAGS: dbs,admin,mongodb
       ME_CONFIG_MONGODB_ADMINUSERNAME: root
       ME_CONFIG_MONGODB_ADMINPASSWORD: ${DOCKER_SECRET_DB}
-      ME_CONFIG_MONGODB_URL: mongodb://root:${DOCKER_SECRET_DB}@db_mongo:27017/
+      ME_CONFIG_MONGODB_URL: mongodb://root:${DOCKER_SECRET_DB}@mongo:27017/
       ME_CONFIG_BASICAUTH: "false"
+    # ports:
+    #   - 8081:8081
     networks:
       - docker2docker
 
   mysql:
     image: mysql:oracle
+    container_name: mysql
     deploy:
       labels:
         - traefik.enable=false
@@ -151,13 +159,14 @@ services:
     volumes:
       - mysql_data:/var/lib/mysql:rw
     # Uncomment this if you want to expose the MySQL port
-    # ports:
-    #   - 3306
+    ports:
+      - 3306:3306
     networks:
       - docker2docker
 
   postgres:
     image: postgres:18.1
+    container_name: postgres
     deploy:
       labels:
         - traefik.enable=false
@@ -186,13 +195,14 @@ services:
       # Script to create required databases on start up process
       - ./scripts/init-user-db.sh:/docker-entrypoint-initdb.d/init-user-db.sh:rw
     # Uncomment this if you want to expose the PostgreSQL port
-    # ports:
-    #   - 5432
+    ports:
+      - 5432:5432
     networks:
       - docker2docker
 
   clickhouse:
     image: clickhouse/clickhouse-server
+    container_name: clickhouse
     deploy:
       labels:
         - traefik.enable=true
@@ -232,9 +242,9 @@ services:
     volumes:
       - clickhouse:/var/lib/clickhouse
     # Uncomment this if you want to expose the ClickHouse port
-    # ports:
-    #   - 9000:9000
-    #   - 8123:8123
+    ports:
+      - 9000:9000
+      - 8123:8123
     networks:
       - docker2docker
 

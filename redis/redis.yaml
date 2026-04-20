@@ -32,7 +32,6 @@ services:
     # ports:
     #   - 6379:6379
     volumes:
-      - server_data:/data
       - ./configs/redis.conf:/usr/local/etc/redis
     networks:
       - docker2docker
@@ -86,9 +85,7 @@ services:
 
 volumes:
   server_data:
-    driver: local
   insight_data:
-    driver: local
 
 networks:
   docker2docker:

@@ -3,7 +3,7 @@
 services:
 
   localstack:
-    image: localstack/localstack
+    image: localstack/localstack:latest-arm64
     labels:
       - sablier.enable=true
       - sablier.group=cloud
@@ -40,20 +40,20 @@ services:
         max-file: "10"
     env_file:
       - ./envs/default.env
+    environment:
+      LOCALSTACK_AUTH_TOKEN: ${LOCALSTACK_AUTH_TOKEN}
     ports:
       # LocalStack Gateway
       - "4566:4566"
       # external services port range
       - "4510-4559:4510-4559"
     volumes:
-      - localstack_data:/var/lib/localstack:rw
-      - "/var/run/docker.sock:/var/run/docker.sock"
+      - /var/run/docker.sock:/var/run/docker.sock
     networks:
       - docker2docker
 
 volumes:
   localstack_data:
-    driver: local
 
 networks:
   docker2docker:
