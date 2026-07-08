@@ -14,6 +14,20 @@ psql -v ON_ERROR_STOP=0 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
 	\$\$;
 EOSQL
 
+# dockhand database and user
+psql -v ON_ERROR_STOP=0 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
+	CREATE USER dockhand WITH PASSWORD 'dockhand_password';
+	CREATE DATABASE dockhand OWNER dockhand;
+	GRANT ALL PRIVILEGES ON DATABASE harbor TO dockhand;
+EOSQL
+
+# harbor database and user
+psql -v ON_ERROR_STOP=0 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
+	CREATE USER harbor WITH PASSWORD 'harbor_password';
+	CREATE DATABASE harbor OWNER harbor;
+	GRANT ALL PRIVILEGES ON DATABASE harbor TO harbor;
+EOSQL
+
 # homarr database and user
 psql -v ON_ERROR_STOP=0 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
 	CREATE USER homarr WITH PASSWORD 'homarr_password';
@@ -130,6 +144,13 @@ psql -v ON_ERROR_STOP=0 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
 	CREATE USER drone_gh WITH PASSWORD 'drone_gh_password';
 	CREATE DATABASE drone_github OWNER drone_gh;
 	GRANT ALL PRIVILEGES ON DATABASE drone_github TO drone_gh;
+EOSQL
+
+# Harbor database and user
+psql -v ON_ERROR_STOP=0 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
+	CREATE USER harbor WITH PASSWORD 'harbor_password';
+	CREATE DATABASE registry OWNER harbor;
+	GRANT ALL PRIVILEGES ON DATABASE registry TO harbor;
 EOSQL
 
 # Harness database and user

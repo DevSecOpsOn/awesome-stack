@@ -78,11 +78,17 @@ services:
       SERVICE_TAG: db, mongodb
       MONGO_INITDB_ROOT_USERNAME: root
       MONGO_INITDB_ROOT_PASSWORD: ${DOCKER_SECRET_DB}
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     volumes:
       - mongodb_data:/data/db:rw
+      - ./scripts/mongodb/init-databases.js:/docker-entrypoint-initdb.d/init-databases.js:rw
     # Uncomment this if you want to expose the MongoDB port
-    ports:
-      - 27017:27017
+    # ports:
+    #   - 27017:27017
     networks:
       - docker2docker
 
@@ -159,8 +165,8 @@ services:
     volumes:
       - mysql_data:/var/lib/mysql:rw
     # Uncomment this if you want to expose the MySQL port
-    ports:
-      - 3306:3306
+    # ports:
+    #   - 3306:3306
     networks:
       - docker2docker
 
@@ -193,10 +199,10 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/18/docker
       # Script to create required databases on start up process
-      - ./scripts/init-user-db.sh:/docker-entrypoint-initdb.d/init-user-db.sh:rw
+      - ./scripts/postgres/init-user-db.sh:/docker-entrypoint-initdb.d/init-user-db.sh:rw
     # Uncomment this if you want to expose the PostgreSQL port
-    ports:
-      - 5432:5432
+    # ports:
+    #   - 5432:5432
     networks:
       - docker2docker
 
@@ -242,9 +248,9 @@ services:
     volumes:
       - clickhouse:/var/lib/clickhouse
     # Uncomment this if you want to expose the ClickHouse port
-    ports:
-      - 9000:9000
-      - 8123:8123
+    # ports:
+    #   - 9000:9000
+    #   - 8123:8123
     networks:
       - docker2docker
 
