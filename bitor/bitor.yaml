@@ -1,0 +1,56 @@
+
+services:
+  bitor:
+    image: ghcr.io/bitorscanner/bitor:latest
+    labels:
+      - sablier.enable=true
+      - sablier.group=monitoring
+    restart: unless-stopped
+    deploy:
+      labels:
+        - traefik.enable=true
+        - traefik.swarm.lbswarm=false
+        - traefik.swarm.network=docker2docker
+        - traefik.http.routers.bitor.entrypoints=web,websecure
+        - traefik.http.routers.bitor.rule=Host(`bitor.docker.local`)
+        - traefik.http.services.bitor.loadbalancer.server.port=8090
+        - traefik.consulcatalog.connect=true
+      replicas: 1
+      endpoint_mode: vip
+      update_config:
+        parallelism: 1
+        delay: 10s
+      restart_policy:
+        condition: any
+        delay: 5s
+        window: 120s
+      resources:
+        limits:
+          memory: 1G
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "200k"
+        max-file: "10"
+    # ports:
+    #   - "8090:8090"
+    environment:
+      API_ENCRYPTION_KEY: ${AP_ENCRYPTION_KEY}
+      DEBUG: 1
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8090/_/"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    volumes:
+      - bitor_data:/data
+    networks:
+      - docker2docker
+
+volumes:
+  bitor_data:
+
+networks:
+  docker2docker:
+    external: true

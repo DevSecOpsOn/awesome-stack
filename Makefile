@@ -17,12 +17,12 @@ OBSERVABILITY :=
 PASS := dokku dokploy
 PORTALS := homarr portainer
 VCS := gogs gitea
-SECURITY := vault passbolt
+SECURITY := vault passbolt bitor
 BACKUP := repliqate
 STORAGE := minio
 DEVOPS := $(PROXY) $(DATABASES) $(CI_CD) $(CLOUD) $(PASS) $(INFRA) $(PORTALS) $(MONITORING) $(VCS) $(STORAGE)
 DEVSECOPS := $(DEVOPS) $(OBSERVABILITY) $(SECURITY)
-HOSTS_VERSION := v17
+HOSTS_VERSION := v18
 
 # Resources to prune
 RESOURCES := container volume image
@@ -54,7 +54,7 @@ define HOST_ENTRIES
 127.0.0.1 komiser.docker.local
 # Networking stack
 # Security stack
-127.0.0.1 vault.docker.local passbolt.docker.local
+127.0.0.1 vault.docker.local passbolt.docker.local bitor.docker.local
 # Storage stack
 127.0.0.1 minio.docker.local s3.docker.local openio.docker.local repliqate.docker.local
 #### docker-stack ####
