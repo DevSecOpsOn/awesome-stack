@@ -1,0 +1,54 @@
+services:
+  dockhand:
+    image: fnsys/dockhand:latest
+    restart: unless-stopped
+    user: "0:0"
+    labels:
+      - sablier.enable=true
+      - sablier.group=monitoring
+    deploy:
+      labels:
+        - traefik.enable=true
+        - traefik.swarm.lbswarm=false
+        - traefik.swarm.network=docker2docker
+        - traefik.http.routers.dockhand.entrypoints=web,websecure
+        - traefik.http.routers.dockhand.rule=Host(`dockhand.docker.local`)
+        - traefik.http.services.dockhand.loadbalancer.server.port=3000
+        - traefik.consulcatalog.connect=true
+      mode: replicated
+      replicas: 1
+      endpoint_mode: vip
+      update_config:
+        parallelism: 1
+        delay: 10s
+        failure_action: rollback
+        order: stop-first
+      restart_policy:
+        condition: any
+        delay: 5s
+        window: 120s
+      resources:
+        limits:
+          memory: 256M
+          cpus: "0.5"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "200k"
+        max-file: "10"
+    environment:
+      DATABASE_URL: "postgres://root:${DOCKER_SECRET_DB}@db_postgres:5432/dockhand?sslmode=disable"
+      EXPORT_METRICS: "true"
+
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - dockhand_data:/app/data
+    networks:
+      - docker2docker # Required if container has multiple networks
+
+networks:
+  docker2docker:
+    external: true  # Assumes Traefik network already exists
+
+volumes:
+  dockhand_data:

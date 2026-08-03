@@ -1,0 +1,295 @@
+
+
+services:
+
+  core:
+    image: goharbor/harbor-core:v2.15.0
+    labels:
+      - sablier.enable=true
+      - sablier.group=registry
+    deploy:
+      labels:
+        - traefik.enable=true
+        - traefik.swarm.lbswarm=false
+        - traefik.swarm.network=docker2docker
+        - traefik.http.routers.harbor_ui.entrypoints=web,websecure
+        - traefik.http.routers.harbor_ui.rule=Host(`harbor.docker.local`)
+        - traefik.http.services.harbor_ui.loadbalancer.server.port=8080
+        - traefik.consulcatalog.connect=true
+      mode: replicated
+      replicas: 1
+      placement:
+        max_replicas_per_node: 1
+      endpoint_mode: vip
+      update_config:
+        parallelism: 1
+        delay: 10s
+      restart_policy:
+        condition: any
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 1G
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "200k"
+        max-file: "10"
+    environment:
+      - CONFIG_PATH=/etc/core/app.conf
+      - CORE_SECRET=${HARBOR_CORE_SECRET}
+      - JOBSERVICE_SECRET=${HARBOR_JOBSERVICE_SECRET}
+      - POSTGRESQL_HOST=db_postgres
+      - POSTGRESQL_PORT=5432
+      - POSTGRESQL_USERNAME=harbor
+      - POSTGRESQL_PASSWORD=${DOCKER_SECRET_DB}
+      - POSTGRESQL_DATABASE=registry
+      - POSTGRESQL_SSLMODE=disable
+      - REGISTRY_URL=http://harbor_registry:5000
+      - TOKEN_SERVICE_URL=http://harbor_core:8080/service/token
+      - HARBOR_ADMIN_PASSWORD=${HARBOR_ADMIN_PASSWORD}
+      - EXT_ENDPOINT=https://harbor.docker.local
+      - CORE_URL=http://harbor_core:8080
+      - JOBSERVICE_URL=http://harbor_jobservice:8080
+      - REGISTRY_CONTROLLER_URL=http://harbor_registryctl:8080
+      - REGISTRY_CREDENTIAL_USERNAME=harbor_registry_user
+      - REGISTRY_CREDENTIAL_PASSWORD=${HARBOR_REGISTRY_SECRET}
+      - WITH_CHARTMUSEUM=false
+      - WITH_NOTARY=false
+      - WITH_TRIVY=true
+      - TRIVY_ADAPTER_URL=http://harbor_trivy:8080
+      - CHART_REPOSITORY_URL=http://harbor_chartmuseum:8080
+      - CSRF_KEY=${HARBOR_CSRF_KEY}
+      - REDIS_URL_CORE=redis://:${DOCKER_SECRET_DB}@redis_server:6379/0?idle_timeout_seconds=30
+      - REDIS_URL_JOBSERVICE=redis://:${DOCKER_SECRET_DB}@redis_server:6379/1?idle_timeout_seconds=30
+      - REDIS_URL_REGISTRY=redis://:${DOCKER_SECRET_DB}@redis_server:6379/2?idle_timeout_seconds=30
+      - REDIS_URL_CHARTMUSEUM=redis://:${DOCKER_SECRET_DB}@redis_server:6379/3?idle_timeout_seconds=30
+      - REDIS_URL_TRIVY=redis://:${DOCKER_SECRET_DB}@redis_server:6379/4?idle_timeout_seconds=30
+    volumes:
+      - core_data:/data
+      - ./configs/core/app.conf:/etc/core/app.conf:ro
+    networks:
+      - docker2docker
+
+  jobservice:
+    image: goharbor/harbor-jobservice:v2.15.0
+    deploy:
+      labels:
+        - traefik.enable=false
+      mode: replicated
+      replicas: 1
+      placement:
+        max_replicas_per_node: 1
+      endpoint_mode: vip
+      update_config:
+        parallelism: 1
+        delay: 10s
+      restart_policy:
+        condition: any
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 1G
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "200k"
+        max-file: "10"
+    environment:
+      - CORE_SECRET=${HARBOR_CORE_SECRET}
+      - JOBSERVICE_SECRET=${HARBOR_JOBSERVICE_SECRET}
+      - CORE_URL=http://harbor_core:8080
+      - REGISTRY_CONTROLLER_URL=http://harbor_registryctl:8080
+      - JOBSERVICE_WEBHOOK_JOB_MAX_RETRY=3
+      - JOBSERVICE_WEBHOOK_JOB_HTTP_CLIENT_TIMEOUT=3
+      - REDIS_URL=redis://:${DOCKER_SECRET_DB}@redis_server:6379/1?idle_timeout_seconds=30
+    volumes:
+      - jobservice_data:/var/log/jobs
+    networks:
+      - docker2docker
+
+  registry:
+    image: goharbor/registry-photon:v2.15.0
+    deploy:
+      labels:
+        - traefik.enable=false
+      mode: replicated
+      replicas: 1
+      placement:
+        max_replicas_per_node: 1
+      endpoint_mode: vip
+      update_config:
+        parallelism: 1
+        delay: 10s
+      restart_policy:
+        condition: any
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 1G
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "200k"
+        max-file: "10"
+    environment:
+      - CORE_SECRET=${HARBOR_CORE_SECRET}
+    volumes:
+      - registry_data:/storage
+      - ./configs/registry/config.yml:/etc/registry/config.yml:ro
+      - ./configs/registry/root.crt:/etc/registry/root.crt:ro
+    networks:
+      - docker2docker
+
+  registryctl:
+    image: goharbor/harbor-registryctl:v2.15.0
+    deploy:
+      labels:
+        - traefik.enable=false
+      mode: replicated
+      replicas: 1
+      placement:
+        max_replicas_per_node: 1
+      endpoint_mode: vip
+      update_config:
+        parallelism: 1
+        delay: 10s
+      restart_policy:
+        condition: any
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 1G
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "200k"
+        max-file: "10"
+    environment:
+      - CORE_SECRET=${HARBOR_CORE_SECRET}
+      - JOBSERVICE_SECRET=${HARBOR_JOBSERVICE_SECRET}
+      - REGISTRY_HTTP_SECRET=${HARBOR_REGISTRY_SECRET}
+      - CORE_URL=http://harbor_core:8080
+      - JOBSERVICE_URL=http://harbor_jobservice:8080
+      - REGISTRY_STORAGE_PROVIDER_NAME=filesystem
+    volumes:
+      - registry_data:/storage
+      - ./configs/registry/config.yml:/etc/registry/config.yml:ro
+      - ./configs/registry/root.crt:/etc/registry/root.crt:ro
+    networks:
+      - docker2docker
+
+  # trivy:
+  #   image: goharbor/trivy-adapter-photon:v2.15.0
+  #   deploy:
+  #     labels:
+  #       - traefik.enable=false
+  #     mode: replicated
+  #     replicas: 1
+  #     placement:
+  #       max_replicas_per_node: 1
+  #     endpoint_mode: vip
+  #     update_config:
+  #       parallelism: 1
+  #       delay: 10s
+  #     restart_policy:
+  #       condition: any
+  #     resources:
+  #       limits:
+  #         cpus: "1.0"
+  #         memory: 1G
+  #   logging:
+  #     driver: "json-file"
+  #     options:
+  #       max-size: "200k"
+  #       max-file: "10"
+  #   environment:
+  #     - HTTP_PROXY=
+  #     - HTTPS_PROXY=
+  #     - NO_PROXY=harbor_core,harbor_jobservice,harbor_registry,harbor_registryctl,harbor_trivy,db_postgres,redis_server
+  #     - SCANNER_TRIVY_DB_REPOSITORY=goharbor/trivy-db
+  #     - SCANNER_TRIVY_JAVA_DB_REPOSITORY=goharbor/trivy-java-db
+  #     - SCANNER_TRIVY_DEBUG=false
+  #     - SCANNER_TRIVY_VULN_TYPE=os,library
+  #     - SCANNER_TRIVY_SEVERITY=UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL
+  #     - SCANNER_TRIVY_SKIP_UPDATE=false
+  #     - SCANNER_TRIVY_OFFLINE_SCAN=false
+  #     - SCANNER_TRIVY_SECURITY_CHECKS=vuln
+  #     - SCANNER_TRIVY_GITHUB_TOKEN=
+  #     - SCANNER_TRIVY_TIMEOUT=5m0s
+  #     - SCANNER_STORE_REDIS_URL=redis://:${DOCKER_SECRET_DB}@redis_server:6379/4?idle_timeout_seconds=30
+  #     - SCANNER_JOB_QUEUE_REDIS_URL=redis://:${DOCKER_SECRET_DB}@redis_server:6379/4?idle_timeout_seconds=30
+  #   volumes:
+  #     - trivy_data:/home/scanner/.cache
+  #   networks:
+  #     - docker2docker
+
+  portal:
+    image: goharbor/harbor-portal:v2.15.0
+    deploy:
+      labels:
+        - traefik.enable=false
+      mode: replicated
+      replicas: 1
+      placement:
+        max_replicas_per_node: 1
+      endpoint_mode: vip
+      update_config:
+        parallelism: 1
+        delay: 10s
+      restart_policy:
+        condition: any
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "200k"
+        max-file: "10"
+    networks:
+      - docker2docker
+
+  # proxy:
+  #   image: goharbor/nginx-photon:v2.15.0
+  #   deploy:
+  #     labels:
+  #       - traefik.enable=false
+  #     mode: replicated
+  #     replicas: 1
+  #     placement:
+  #       max_replicas_per_node: 1
+  #     endpoint_mode: vip
+  #     update_config:
+  #       parallelism: 1
+  #       delay: 10s
+  #     restart_policy:
+  #       condition: any
+  #     resources:
+  #       limits:
+  #         cpus: "0.5"
+  #         memory: 512M
+  #   logging:
+  #     driver: "json-file"
+  #     options:
+  #       max-size: "200k"
+  #       max-file: "10"
+  #   volumes:
+  #     - ./configs/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+  #   networks:
+  #     - docker2docker
+
+volumes:
+  core_data:
+    driver: local
+  jobservice_data:
+    driver: local
+  registry_data:
+    driver: local
+  trivy_data:
+    driver: local
+
+networks:
+  docker2docker:
+    external: true

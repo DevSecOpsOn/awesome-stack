@@ -1,0 +1,55 @@
+
+
+services:
+
+  miniblue:
+    image: moabukar/miniblue:latest
+    labels:
+      - sablier.enable=true
+      - sablier.group=cloud
+    deploy:
+      labels:
+        - traefik.enable=true
+        - traefik.swarm.network=docker2docker
+        - traefik.swarm.lbswarm=false
+        - traefik.http.routers.miniblue.entrypoints=web,websecure
+        - traefik.http.routers.miniblue.rule=Host(`miniblue.docker.local`)
+        - traefik.http.services.miniblue.loadbalancer.server.port=4566
+        - traefik.consulcatalog.connect=true
+      mode: replicated
+      replicas: 1
+      update_config:
+        parallelism: 1
+        delay: 10s
+        order: start-first
+        failure_action: rollback
+      restart_policy:
+        condition: any
+        delay: 5s
+        max_attempts: 5
+        window: 120s
+      resources:
+        reservations:
+          cpus: '0.25'
+          memory: 20M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "200k"
+        max-file: "10"
+    # Uncomment below lines if you want to expose the service directly
+    # ports:
+    #   - "4566:4566"
+    #   - "4567:4567"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - docker2docker
+    # Rafael Caer - 21 3179-2341
+
+volumes:
+  miniblue_data:
+
+networks:
+  docker2docker:
+    external: true
