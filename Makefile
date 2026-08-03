@@ -4,7 +4,7 @@ PODMAN_CLI := $(shell which podman 2>/dev/null)
 CONTAINER_ENGINE := $(if $(DOCKER_CLI),$(DOCKER_CLI),$(if $(PODMAN_CLI),$(PODMAN_CLI),docker))
 SWARM_ADDR_ := $(shell ifconfig | grep -E "inet 192.168.2" | awk '{print $$2}')
 # Stack list
-AI := activepieces n8n
+AI := activepieces n8n ollama
 AIML := aiml
 PROXY := traefik ngrok squid
 DATABASES := db redis
@@ -22,7 +22,7 @@ BACKUP := repliqate
 STORAGE := minio
 DEVOPS := $(PROXY) $(DATABASES) $(CI_CD) $(CLOUD) $(PASS) $(INFRA) $(PORTALS) $(MONITORING) $(VCS) $(STORAGE)
 DEVSECOPS := $(DEVOPS) $(OBSERVABILITY) $(SECURITY)
-HOSTS_VERSION := v18
+HOSTS_VERSION := v19
 
 # Resources to prune
 RESOURCES := container volume image
@@ -30,7 +30,7 @@ RESOURCES := container volume image
 define HOST_ENTRIES
 #### docker-stack: $(HOSTS_VERSION) ####
 # AI
-127.0.0.1 activepieces.docker.local n8n.docker.local hedgedoc.docker.local
+127.0.0.1 activepieces.docker.local n8n.docker.local hedgedoc.docker.local ollama.docker.local
 # AI/ML
 127.0.0.1 langchain.docker.local qwen.docker.local pytorch.docker.local tensorflow.docker.local airflow.docker.local
 # Databases
