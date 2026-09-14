@@ -13,7 +13,7 @@ I am using traefik reverse proxy and load balancer to access docker applications
 
 ```text
 #### docker-stack: v10 ####
-# AI 
+# AI
 127.0.0.1 activepieces.docker.local
 # Databases
 127.0.0.1 redis.docker.local
@@ -104,7 +104,7 @@ services:
 Here’s an example `dbs.yml` file with the requested configurations:
 
 ```yaml
-version: '3.9'
+
 
 services:
   mysql:

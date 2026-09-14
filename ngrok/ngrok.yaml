@@ -1,4 +1,4 @@
-version: "3.9"
+
 
 services:
 
@@ -36,15 +36,16 @@ services:
       options:
         max-size: "200k"
         max-file: "10"
+    environment:
+      - NGROK_AUTHTOKEN=${NGROK_BITBUCKET_AUTHTOKEN}
     command:
       - "start"
       - "--all"
       - "--config"
       - "/etc/ngrok.yml"
-    volumes:
-      - ./configs/bitbucket.yaml:/etc/ngrok.yml:rw
-    environment:
-      - NGROK_AUTHTOKEN=${NGROK_BITBUCKET_AUTHTOKEN}
+    configs:
+      - source: bitbucket
+        target: /etc/ngrok.yml # refer to https://ngrok.com/docs/agent/config/v3#basic
     networks:
       - docker2docker
 
@@ -87,13 +88,23 @@ services:
       - "--all"
       - "--config"
       - "/etc/ngrok.yml"
-    volumes:
-      - ./configs/github.yaml:/etc/ngrok.yml:rw
+    configs:
+      - source: github
+        target: /etc/ngrok.yml
+    # volumes:
+    #   - ./configs/github.yaml:/etc/ngrok.yml:rw
     environment:
       - NGROK_AUTHTOKEN=${NGROK_GITHUB_AUTHTOKEN}
+      - NGROK_DOMAIN_GITHUB=${NGROK_DOMAIN_GITHUB}
     networks:
       - docker2docker
 
 networks:
   docker2docker:
     external: true
+
+configs:
+  github:
+    file: ./configs/github.yaml
+  bitbucket:
+    file: ./configs/bitbucket.yaml

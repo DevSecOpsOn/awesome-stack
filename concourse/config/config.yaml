@@ -1,12 +1,48 @@
 roles:
 - name: owner
-  github:
-    users: ["admin"]
-- name: member
-  github:
-    teams: ["org:DevSecOpsOn"]
-- name: viewer
-  github:
-    orgs: ["org"]
   local:
-    users: ["admin"]
+    users: ["root"]
+- name: member
+  local:
+    users: ["root"]
+- name: viewer
+  local:
+    users: ["root"]
+
+teams:
+- name: dev
+  auth:
+    roles:
+    - name: owner
+      local:
+        users: ["root"]
+    - name: member
+      local:
+        users: ["root"]
+    - name: viewer
+      local:
+        users: ["root"]
+- name: devops
+  auth:
+    roles:
+    - name: owner
+      local:
+        users: ["root"]
+    - name: member
+      local:
+        users: ["root"]
+    - name: viewer
+      local:
+        users: ["root"]
+- name: sre
+  auth:
+    roles:
+    - name: owner
+      local:
+        users: ["root"]
+    - name: member
+      local:
+        users: ["root"]
+    - name: viewer
+      local:
+        users: ["root"]

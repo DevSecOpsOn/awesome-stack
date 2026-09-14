@@ -393,7 +393,7 @@ output.elasticsearch:
   #password: ''
 
   # Kafka version filebeat is assumed to run against. Defaults to the "1.0.0".
-  #version: '1.0.0'
+  #
 
   # Configure JSON encoding
   #codec.json:

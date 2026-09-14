@@ -1,4 +1,4 @@
-version: "3.9"
+
 
 services:
 
@@ -52,7 +52,6 @@ services:
 
 volumes:
   dokploy_config:
-    driver: local
 
 networks:
   docker2docker:

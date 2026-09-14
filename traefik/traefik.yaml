@@ -1,4 +1,4 @@
-version: "3.9"
+
 
 services:
   traefik:
@@ -20,6 +20,7 @@ services:
       - --providers.docker.endpoint=unix:///var/run/docker.sock
       - --providers.docker.watch=true
       - --providers.docker.exposedbydefault=false
+      - --providers.docker.network=docker2docker
       - --providers.swarm=true
       - --providers.swarm.watch=true
       - --providers.swarm.exposedbydefault=false
@@ -80,7 +81,7 @@ services:
         - "traefik.http.routers.dashboard.tls=false"
         - "traefik.http.routers.dashboard.entrypoints=web,websecure"
         - "traefik.http.routers.dashboard.service=api@internal"
-        - "traefik.http.routers.dashboard.rule=Host(`traefik.docker.local`)"
+        - "traefik.http.routers.dashboard.rule=Host(`traefik.docker.local`) && PathPrefix(`/dashboard`)"
         - "traefik.http.services.dashboard.loadbalancer.server.port=8080"
       mode: replicated
       endpoint_mode: vip
@@ -108,16 +109,15 @@ services:
       - 443:443
       - 8080:8080
       - 28017:28017
-      - 9000:9000
     volumes:
-      - letsencrypt:/letsencrypt
+      - ./letsencrypt:/letsencrypt
       - /var/run/docker.sock:/var/run/docker.sock
     networks:
       - docker2docker
 
 volumes:
   letsencrypt:
-    driver: local
+    external: true
 
 networks:
   docker2docker:

@@ -1,22 +1,21 @@
-version: "3.9"
+
 
 services:
 
-  localstack:
-    image: localstack/localstack
+  ministack:
+    image: ministackorg/ministack
     labels:
       - sablier.enable=true
       - sablier.group=cloud
     deploy:
       labels:
-        - SERVICE_IGNORE=false
-        - traefik.enable=false
+        - traefik.enable=true
         - traefik.swarm.network=docker2docker
         - traefik.swarm.lbswarm=false
-        - traefik.http.routers.dashboard.entrypoints=web,websecure
+        - traefik.http.routers.ministack.entrypoints=web,websecure
+        - traefik.http.routers.ministack.rule=Host(`ministack.docker.local`)
+        - traefik.http.services.ministack.loadbalancer.server.port=4566
         - traefik.consulcatalog.connect=true
-        - sablier.enable=true
-        - sablier.group=devsecops
       mode: replicated
       replicas: 1
       update_config:
@@ -38,22 +37,16 @@ services:
       options:
         max-size: "200k"
         max-file: "10"
-    env_file:
-      - ./envs/default.env
-    ports:
-      # LocalStack Gateway
-      - "4566:4566"
-      # external services port range
-      - "4510-4559:4510-4559"
+    # Uncomment below lines if you want to expose the service directly
+    # ports:
+    #   - "4566:4566"
     volumes:
-      - localstack_data:/var/lib/localstack:rw
-      - "/var/run/docker.sock:/var/run/docker.sock"
+      - /var/run/docker.sock:/var/run/docker.sock
     networks:
       - docker2docker
 
 volumes:
-  localstack_data:
-    driver: local
+  ministack_data:
 
 networks:
   docker2docker:

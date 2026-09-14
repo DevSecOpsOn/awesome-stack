@@ -1,0 +1,47 @@
+version: 0.1
+log:
+  level: info
+  fields:
+    service: registry
+storage:
+  filesystem:
+    rootdirectory: /storage
+  cache:
+    layerinfo: redis
+  maintenance:
+    uploadpurging:
+      enabled: true
+      age: 168h
+      interval: 24h
+      dryrun: false
+  delete:
+    enabled: true
+redis:
+  addr: redis_server:6379
+  password: ${DOCKER_SECRET_DB}
+  db: 2
+  dialtimeout: 10s
+  readtimeout: 10s
+  writetimeout: 10s
+  pool:
+    maxidle: 100
+    maxactive: 500
+    idletimeout: 60s
+http:
+  addr: :5000
+  secret: ${HARBOR_REGISTRY_SECRET}
+  relativeurls: false
+  tls:
+    certificate: /etc/registry/root.crt
+    key: /etc/registry/root.key
+auth:
+  token:
+    issuer: harbor-token-issuer
+    realm: https://harbor.docker.local/service/token
+    rootcertbundle: /etc/registry/root.crt
+    service: harbor-registry
+validation:
+  disabled: true
+compatibility:
+  schema1:
+    enabled: true

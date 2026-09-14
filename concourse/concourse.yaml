@@ -1,9 +1,7 @@
-version: '3.9'
-
 services:
 
   web:
-    image: concourse/concourse:7.14.1
+    image: concourse/concourse:8.1.1
     labels:
       - sablier.enable=true
       - sablier.group=cicd
@@ -25,32 +23,30 @@ services:
         condition: any
       resources:
         reservations:
-          cpus: '0.25'
-          memory: 20M
+          cpus: '0.50'
+          memory: 512M
+        limits:
+          cpus: '1.00'
+          memory: 1G
     environment:
       CONCOURSE_POSTGRES_HOST: db_postgres
       CONCOURSE_POSTGRES_USER: root
+      CONCOURSE_POSTGRES_PORT: "5432"
       CONCOURSE_POSTGRES_PASSWORD: ${DOCKER_SECRET_DB}
       CONCOURSE_POSTGRES_DATABASE: concourseci
-      CONCOURSE_TEAM: "DevSecOpsOn"
       CONCOURSE_EXTERNAL_URL: http://concourse.docker.local
-      CONCOURSE_CLUSTER_NAME: tanus
-      CONCOURSE_ADD_LOCAL_USER: admin:${DOCKER_SECRET_DB}
-      CONCOURSE_MAIN_TEAM_LOCAL_USER: DevSecOpsOn
-      CONCOURSE_WORKER_BAGGAGECLAIM_DRIVER: overlay
-      CONCOURSE_WORKER_CONTAINERD_DNS_SERVER: "8.8.8.8"
-      CONCOURSE_WORKER_RUNTIME: "houdini"
-      CONCOURSE_CLIENT_SECRET: Y29uY291cnNlLXdlYgo=
-      CONCOURSE_TSA_CLIENT_SECRET: Y29uY291cnNlLXdvcmtlcgo=
+      CONCOURSE_CLUSTER_NAME: "Tanus"
+      CONCOURSE_LOG_LEVEL: "debug"
+      CONCOURSE_ADD_LOCAL_USER: "root:${CONCOURSE_LOCAL_PASSWORD:-admin123@}"
+      CONCOURSE_MAIN_TEAM_LOCAL_USER: "root"
+      CONCOURSE_MAIN_TEAM_CONFIG: "/opt/concourse/config.yml"
+      CONCOURSE_CLIENT_SECRET: ${CONCOURSE_CLIENT_SECRET:-Y29uY291cnNlLXdlYgo=}
+      CONCOURSE_TSA_CLIENT_SECRET: ${CONCOURSE_TSA_CLIENT_SECRET:-Y29uY291cnNlLXdvcmtlcgo=}
       CONCOURSE_X_FRAME_OPTIONS: allow
       CONCOURSE_CONTENT_SECURITY_POLICY: "frame-ancestors *;"
       CONCOURSE_TRACING_JAEGER_ENDPOINT: "http://jaeger-all-in-one:14268/api/traces"
     privileged: true
     command: web
-    # cgroup: host
-    # Uncomment this if you want to expose the web port
-    # ports:
-    #   - 8080:8080
     logging:
       driver: "json-file"
       options:
@@ -58,24 +54,17 @@ services:
         max-file: "10"
     volumes:
       - "./scripts/web:/concourse-keys:rw"
+      - "./config/config.yaml:/opt/concourse/config.yml:rw"
     networks:
       - docker2docker
 
   worker:
-    image: concourse/concourse:7.14.1
+    image: concourse/concourse:8.1.1
     user: root
     labels:
       - sablier.enable=true
       - sablier.group=ci
     deploy:
-      labels:
-        - traefik.enable=true
-        - traefik.swarm.lbswarm=false
-        - traefik.swarm.network=docker2docker
-        - traefik.http.routers.concourse_worker.entrypoints=web,websecure
-        - traefik.http.routers.concourse_worker.rule=Host(`worker.concourse.docker.local`)
-        - traefik.http.services.concourse_worker.loadbalancer.server.port=8080
-        - traefik.consulcatalog.connect=true
       mode: replicated
       replicas: 1
       update_config:
@@ -85,17 +74,19 @@ services:
         condition: any
       resources:
         reservations:
-          cpus: '0.25'
-          memory: 20M
+          cpus: '0.50'
+          memory: 512M
+        limits:
+          cpus: '2.00'
+          memory: 2G
     environment:
       CONCOURSE_WORKER_RUNTIME: "containerd"
-      CONCOURSE_TSA_HOST: concourse_web:2222
+      CONCOURSE_TSA_HOST: web:2222
       CONCOURSE_TSA_PUBLIC_KEY: "/concourse-keys/tsa_host_key.pub"
       CONCOURSE_TSA_WORKER_PRIVATE_KEY: "/concourse-keys/worker_key"
       CONCOURSE_WORKER_BAGGAGECLAIM_DRIVER: overlay
-      CONCOURSE_CLIENT_SECRET: Y29uY291cnNlLXdlYgo=
-      CONCOURSE_TSA_CLIENT_SECRET: Y29uY291cnNlLXdvcmtlcgo=
-      CONCOURSE_TEAM: "DevSecOpsOn"
+      CONCOURSE_CLIENT_SECRET: ${CONCOURSE_CLIENT_SECRET:-Y29uY291cnNlLXdlYgo=}
+      CONCOURSE_TSA_CLIENT_SECRET: ${CONCOURSE_TSA_CLIENT_SECRET:-Y29uY291cnNlLXdvcmtlcgo=}
       CONCOURSE_BIND_IP: 0.0.0.0
       CONCOURSE_BAGGAGECLAIM_DRIVER: overlay
       CONCOURSE_CONTAINERD_DNS_PROXY_ENABLE: "true"
@@ -107,9 +98,6 @@ services:
     tmpfs:
       - /run
       - /run/lock
-    # Uncomment this if you want to expose the web port
-    # ports:
-    #   - 8080:8080
     logging:
       driver: "json-file"
       options:
@@ -117,7 +105,7 @@ services:
         max-file: "10"
     volumes:
       - /sys/fs/cgroup:/sys/fs/cgroup:ro
-      - "./scripts/worker:/concourse-keys:rw"
+      - "./scripts/worker:/concourse-keys:ro"
     networks:
       - docker2docker
 
@@ -128,5 +116,5 @@ volumes:
     driver: local
 
 networks:
-    docker2docker:
-        external: true
+  docker2docker:
+    external: true

@@ -4,31 +4,33 @@ PODMAN_CLI := $(shell which podman 2>/dev/null)
 CONTAINER_ENGINE := $(if $(DOCKER_CLI),$(DOCKER_CLI),$(if $(PODMAN_CLI),$(PODMAN_CLI),docker))
 SWARM_ADDR_ := $(shell ifconfig | grep -E "inet 192.168.2" | awk '{print $$2}')
 # Stack list
-AI := activepieces n8n
+AI := activepieces n8n ollama
 AIML := aiml
 PROXY := traefik ngrok squid
 DATABASES := db redis
 DOCS := hedgedoc
 CI_CD := concourse droneci harness gocd jenkins teamcity
-INFRA := consul localstack runatlantis watchtower sablier
-OBSERVABILITY := beszel dozzle elfk grafana jaeger otelcol prometheus
+CLOUD := ministack miniblue
+INFRA := consul runatlantis sablier
+MONITORING := beszel dozzle grafana jaeger otelcol prometheus dockhand
+OBSERVABILITY :=
 PASS := dokku dokploy
 PORTALS := homarr portainer
 VCS := gogs gitea
-SECURITY := vault passbolt
+SECURITY := vault passbolt bitor
 BACKUP := repliqate
 STORAGE := minio
-DEVOPS := $(PROXY) $(DATABASES) $(DOCS) $(AI) $(AIML) $(CI_CD) $(PASS) $(INFRA) $(PORTALS) $(OBSERVABILITY) $(VCS) $(STORAGE)
-DEVSECOPS := $(DEVOPS) $(SECURITY)
-HOSTS_VERSION := v15
+DEVOPS := $(PROXY) $(DATABASES) $(CI_CD) $(CLOUD) $(PASS) $(INFRA) $(PORTALS) $(MONITORING) $(VCS) $(STORAGE)
+DEVSECOPS := $(DEVOPS) $(OBSERVABILITY) $(SECURITY)
+HOSTS_VERSION := v19
 
 # Resources to prune
-RESOURCES := container network volume
+RESOURCES := container volume image
 
 define HOST_ENTRIES
 #### docker-stack: $(HOSTS_VERSION) ####
 # AI
-127.0.0.1 activepieces.docker.local n8n.docker.local hedgedoc.docker.local
+127.0.0.1 activepieces.docker.local n8n.docker.local hedgedoc.docker.local ollama.docker.local
 # AI/ML
 127.0.0.1 langchain.docker.local qwen.docker.local pytorch.docker.local tensorflow.docker.local airflow.docker.local
 # Databases
@@ -37,7 +39,7 @@ define HOST_ENTRIES
 127.0.0.1 traefik.docker.local haproxy.docker.local squid.docker.local
 127.0.0.1 ngrok-bb.docker.local ngrok-gh.docker.local
 # Infrastructure stack
-127.0.0.1 atlantis.docker.local coolify.docker.local consul.docker.local dokku.docker.local dokploy.docker.local easypanel.docker.local kamal.docker.local sablier.docker.local
+127.0.0.1 atlantis.docker.local coolify.docker.local consul.docker.local dokku.docker.local dokploy.docker.local easypanel.docker.local kamal.docker.local sablier.docker.local ministack.docker.local miniblue.docker.local
 # VCS, CI/CD stack
 127.0.0.1 gogs.docker.local
 127.0.0.1 droneci-bb.docker.local droneci-gh.docker.local
@@ -45,14 +47,14 @@ define HOST_ENTRIES
 # WebUI & Portal stack
 127.0.0.1 adminer.docker.local portainer.docker.local devsecopson.docker.local
 # Monitoring stack
-127.0.0.1 alertmanager.docker.local beszel.docker.local dozzle.docker.local grafana.docker.local prometheus.docker.local jaeger.docker.local
+127.0.0.1 alertmanager.docker.local beszel.docker.local dozzle.docker.local grafana.docker.local prometheus.docker.local jaeger.docker.local dockhand.docker.local
 # Logging stack (ELK)
 127.0.0.1 elasticsearch.docker.local fluentbit.docker.local kibana.docker.local logstash.docker.local
 # Cloud Cost Management stack
 127.0.0.1 komiser.docker.local
 # Networking stack
 # Security stack
-127.0.0.1 vault.docker.local passbolt.docker.local
+127.0.0.1 vault.docker.local passbolt.docker.local bitor.docker.local
 # Storage stack
 127.0.0.1 minio.docker.local s3.docker.local openio.docker.local repliqate.docker.local
 #### docker-stack ####
@@ -104,8 +106,9 @@ init:
 # Create a container network with overlay driver and attachable parameter
 network:
 
+	@$(CONTAINER_ENGINE) network ls | grep 'docker2docker' || $(CONTAINER_ENGINE) network create --driver=bridge --attachable --ipv6=true  --ipam-driver=default --scope=local compose2compose
 	@$(CONTAINER_ENGINE) network ls | grep 'docker2docker' || $(CONTAINER_ENGINE) network create --driver=overlay --subnet 10.1.0.0/16 --attachable --ipv6=true  --ipam-driver=default --scope=swarm docker2docker
-	@echo "🎯 Container network 'docker2docker' created or already exists."
+	@echo "🎯 Container network 'compose2compose' and 'docker2docker' created or already exists."
 
 # Create a container secret for the database password
 secrets:
