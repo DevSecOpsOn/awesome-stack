@@ -5,9 +5,10 @@ services:
     image: quay.io/hedgedoc/hedgedoc:1.10.5
     labels:
       - sablier.enable=true
-      - sablier.group=docs
     deploy:
       labels:
+        - sablier.enable=true
+        - sablier.group=docs
         - traefik.enable=true
         - traefik.swarm.lbswarm=false
         - traefik.swarm.network=swarm2swarm

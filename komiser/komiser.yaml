@@ -6,9 +6,10 @@ services:
     image: tailwarden/komiser:latest
     labels:
       - sablier.enable=true
-      - sablier.group=cloud
     deploy:
       labels:
+        - sablier.enable=true
+        - sablier.group=cloud
         - traefik.enable=true
         - traefik.swarm.lbswarm=false
         - traefik.swarm.network=swarm2swarm

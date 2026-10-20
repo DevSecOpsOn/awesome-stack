@@ -6,9 +6,10 @@ services:
     image: goharbor/harbor-core:v2.15.0
     labels:
       - sablier.enable=true
-      - sablier.group=registry
     deploy:
       labels:
+        - sablier.enable=true
+        - sablier.group=registry
         - traefik.enable=true
         - traefik.swarm.lbswarm=false
         - traefik.swarm.network=swarm2swarm

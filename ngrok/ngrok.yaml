@@ -6,9 +6,10 @@ services:
     image: ngrok/ngrok:latest
     labels:
       - sablier.enable=false
-      - sablier.group=proxy
     deploy:
       labels:
+        - sablier.enable=true
+        - sablier.group=proxy
         - traefik.enable=true
         - traefik.swarm.lbswarm=false
         - traefik.swarm.network=swarm2swarm

@@ -8,9 +8,10 @@ services:
     image: passbolt/passbolt:latest-ce-non-root
     labels:
       - sablier.enable=true
-      - sablier.group=security
     deploy:
       labels:
+        - sablier.enable=true
+        - sablier.group=security
         - traefik.enable=true
         - traefik.swarm.lbswarm=false
         - traefik.swarm.network=swarm2swarm

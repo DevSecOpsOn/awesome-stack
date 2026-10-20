@@ -75,7 +75,9 @@ services:
     deploy:
       replicas: 1
       labels:
-        - "SERVICE_IGNORE=false"
+        - sablier.enable=true
+        - sablier.group=loadbalancer
+        - "SERVICE_IGNORE=true"
         - "traefik.enable=true"
         # Dashboard router
         - "traefik.http.routers.dashboard.tls=false"
@@ -114,7 +116,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
     networks:
       - swarm2swarm
-      - compose2swarm
+      - compose2swarm 
 
 volumes:
   letsencrypt:

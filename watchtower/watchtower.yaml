@@ -6,9 +6,10 @@ services:
     image: containrrr/watchtower
     labels:
       - sablier.enable=true
-      - sablier.group=miscelaneous
     deploy:
       labels:
+        - sablier.enable=true
+        - sablier.group=miscelaneous
         - traefik.enable=true
         - traefik.swarm.lbswarm=false
         - traefik.swarm.network=swarm2swarm

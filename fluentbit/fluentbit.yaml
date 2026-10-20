@@ -6,9 +6,10 @@ services:
     image: fluent/fluent-bit:latest
     labels:
       - sablier.enable=true
-      - sablier.group=logging
     deploy:
       labels:
+        - sablier.enable=true
+        - sablier.group=log
         - traefik.enable=true
         - traefik.swarm.lbswarm=false
         - traefik.swarm.network=swarm2swarm

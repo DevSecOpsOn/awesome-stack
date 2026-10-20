@@ -8,6 +8,7 @@ services:
       - sablier.group=monitoring
     deploy:
       labels:
+        - sablier.enable=true
         - traefik.enable=true
         - traefik.swarm.lbswarm=false
         - traefik.swarm.network=swarm2swarm

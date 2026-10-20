@@ -5,12 +5,13 @@ services:
   server:
     image: hashicorp/vault:1.20
     labels:
-      - sablier.enable=false
+      - sablier.enable=true
       - sablier.group=security
     cap_add:
       - IPC_LOCK
     deploy:
       labels:
+        - sablier.enable=true
         - traefik.enable=true
         - traefik.swarm.lbswarm=false
         - traefik.swarm.network=swarm2swarm

@@ -6,9 +6,10 @@ services:
     image: webhookrelay/webhookrelayd:latest
     labels:
       - sablier.enable=true
-      - sablier.group=proxy
     deploy:
       labels:
+        - sablier.enable=true
+        - sablier.group=proxy
         - traefik.enable=false
         - sablier.enable=true
         - sablier.group=devsecops

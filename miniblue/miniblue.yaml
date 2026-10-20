@@ -6,9 +6,10 @@ services:
     image: moabukar/miniblue:latest
     labels:
       - sablier.enable=true
-      - sablier.group=cloud
     deploy:
       labels:
+        - sablier.enable=true
+        - sablier.group=cloud
         - traefik.enable=true
         - traefik.swarm.network=swarm2swarm
         - traefik.swarm.lbswarm=false

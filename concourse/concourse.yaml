@@ -7,6 +7,8 @@ services:
       - sablier.group=cicd
     deploy:
       labels:
+        - sablier.enable=true
+        - sablier.group=cicd
         - traefik.enable=true
         - traefik.swarm.lbswarm=false
         - traefik.swarm.network=swarm2swarm

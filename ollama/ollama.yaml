@@ -5,9 +5,10 @@ services:
     image: ollama/ollama
     labels:
       - sablier.enable=true
-      - sablier.group=ai
     deploy:
       labels:
+        - sablier.enable=true
+        - sablier.group=ai
         - traefik.enable=false
         - traefik.swarm.lbswarm=false
         - traefik.swarm.network=swarm2swarm

@@ -6,9 +6,10 @@ services:
     image: redis:7.4-alpine
     labels:
       - sablier.enable=false
-      - sablier.group=database
     deploy:
       labels:
+        - sablier.enable=true
+        - sablier.group=database
         - traefik.enable=false
       replicas: 2
       endpoint_mode: vip

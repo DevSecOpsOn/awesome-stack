@@ -6,9 +6,10 @@ services:
     image: dokploy/dokploy:latest
     labels:
       - sablier.enable=true
-      - sablier.group=ai
     deploy:
       labels:
+        - sablier.enable=true
+        - sablier.group=ai
         - traefik.enable=true
         - traefik.swarm.lbswarm=false
         - traefik.swarm.network=swarm2swarm

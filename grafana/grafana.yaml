@@ -6,6 +6,8 @@ services:
     image: grafana/loki:latest
     deploy:
       labels:
+        - sablier.enable=true
+        - sablier.group=monitoring 
         - traefik.enable=true
         - traefik.swarm.lbswarm=false
         - traefik.swarm.network=swarm2swarm
@@ -45,6 +47,8 @@ services:
     image: grafana/alloy:latest
     deploy:
       labels:
+        - sablier.enable=true
+        - sablier.group=monitoring
         - traefik.enable=true
         - traefik.swarm.lbswarm=false
         - traefik.swarm.network=swarm2swarm
@@ -83,6 +87,8 @@ services:
     image: grafana/tempo:latest
     deploy:
       labels:
+        - sablier.enable=true
+        - sablier.group=monitoring
         - traefik.enable=true
         - traefik.swarm.lbswarm=false
         - traefik.swarm.network=swarm2swarm
@@ -140,6 +146,8 @@ services:
     image: grafana/mimir:latest
     deploy:
       labels:
+        - sablier.enable=true
+        - sablier.group=monitoring
         - traefik.enable=true
         - traefik.swarm.lbswarm=false
         - traefik.swarm.network=swarm2swarm
@@ -194,6 +202,8 @@ services:
     image: grafana/grafana-oss:main
     deploy:
       labels:
+        - sablier.enable=true
+        - sablier.group=monitoring
         - traefik.enable=true
         - traefik.swarm.lbswarm=false
         - traefik.swarm.network=swarm2swarm

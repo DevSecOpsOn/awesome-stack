@@ -6,6 +6,8 @@ services:
     image: ghcr.io/atuinsh/atuin:latest
     deploy:
       labels:
+        - sablier.enable=true
+        - sablier.group=config 
         - traefik.enable=true
         - traefik.swarm.lbswarm=false
         - traefik.swarm.network=swarm2swarm

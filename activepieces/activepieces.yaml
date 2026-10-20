@@ -6,9 +6,10 @@ services:
     image: activepieces/activepieces:0.70.5
     labels:
       - sablier.enable=true
-      - sablier.group=serverless
     deploy:
       labels:
+        - sablier.enable=true
+        - sablier.group=serverless
         - traefik.enable=true
         - traefik.swarm.lbswarm=false
         - traefik.swarm.network=swarm2swarm

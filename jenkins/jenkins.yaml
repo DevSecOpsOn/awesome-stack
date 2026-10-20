@@ -6,9 +6,10 @@ services:
     image: jenkins/jenkins:jdk21
     labels:
       - sablier.enable=true
-      - sablier.group=cicd
     deploy:
       labels:
+        - sablier.enable=true
+        - sablier.group=cicd
         - traefik.enable=true
         - traefik.swarm.network=swarm2swarm
         - traefik.swarm.lbswarm=false

@@ -49,6 +49,8 @@ services:
     container_name: mongo
     deploy:
       labels:
+        - sablier.enable=true
+        - sablier.group=database
         - traefik.enable=true
         - traefik.swarm.network=swarm2swarm
         - traefik.swarm.lbswarm=false
@@ -102,6 +104,8 @@ services:
       - sablier.group=portals
     deploy:
       labels:
+        - sablier.enable=true
+        - sablier.group=database
         - traefik.enable=true
         - traefik.swarm.lbswarm=false
         - traefik.swarm.network=swarm2swarm
@@ -144,6 +148,8 @@ services:
     container_name: mysql
     deploy:
       labels:
+        - sablier.enable=true
+        - sablier.group=database
         - traefik.enable=false
       replicas: 1
       update_config:
@@ -179,6 +185,8 @@ services:
     container_name: postgres
     deploy:
       labels:
+        - sablier.enable=true
+        - sablier.group=database
         - traefik.enable=false
       replicas: 1
       update_config:
@@ -216,6 +224,8 @@ services:
     container_name: clickhouse
     deploy:
       labels:
+        - sablier.enable=true
+        - sablier.group=database
         - traefik.enable=true
         - traefik.tcp.routers.clickhouse.rule=HostSNI(`*`)
         - traefik.tcp.routers.clickhouse.entrypoints=clickhouse

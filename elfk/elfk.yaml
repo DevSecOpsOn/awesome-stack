@@ -5,6 +5,8 @@ services:
     image: docker.elastic.co/elasticsearch/elasticsearch:9.1.4
     deploy:
       labels:
+        - sablier.enable=true
+        - sablier.group=log 
         - traefik.enable=true
         - traefik.swarm.lbswarm=false
         - traefik.swarm.network=swarm2swarm
@@ -49,6 +51,8 @@ services:
     image: docker.elastic.co/kibana/kibana:9.1.4
     deploy:
       labels:
+        - sablier.enable=true
+        - sablier.group=log 
         - traefik.enable=true
         - traefik.swarm.lbswarm=false
         - traefik.swarm.network=swarm2swarm
@@ -92,6 +96,8 @@ services:
     image: docker.elastic.co/beats/filebeat:9.1.4
     deploy:
       labels:
+        - sablier.enable=true
+        - sablier.group=log 
         - traefik.enable=false
         - traefik.consulcatalog.connect=true
       mode: replicated
@@ -131,6 +137,8 @@ services:
     image: docker.elastic.co/logstash/logstash:9.1.4
     deploy:
       labels:
+        - sablier.enable=true
+        - sablier.group=log 
         - traefik.enable=true
         - traefik.swarm.lbswarm=false
         - traefik.swarm.network=swarm2swarm
@@ -174,6 +182,8 @@ services:
     image: docker.elastic.co/beats/metricbeat:9.1.4
     deploy:
       labels:
+        - sablier.enable=true
+        - sablier.group=log
         - traefik.enable=false
         - traefik.consulcatalog.connect=true
       mode: replicated

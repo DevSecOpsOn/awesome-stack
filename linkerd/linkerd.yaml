@@ -7,9 +7,10 @@ services:
     image: buoyantio/linkerd:nightly
     labels:
       - sablier.enable=true
-      - sablier.group=mesh
     deploy:
       labels:
+        - sablier.enable=true
+        - sablier.group=mesh
         - traefik.enable=true
         - traefik.swarm.lbswarm=false
         - traefik.swarm.network=swarm2swarm

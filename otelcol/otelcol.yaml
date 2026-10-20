@@ -5,9 +5,10 @@ services:
     image: otel/opentelemetry-collector-contrib:latest
     labels:
       - sablier.enable=true
-      - sablier.group=observability
     deploy:
       labels:
+        - sablier.enable=true
+        - sablier.group=observability
         - traefik.enable=true
         - traefik.swarm.lbswarm=false
         - traefik.swarm.network=swarm2swarm

@@ -6,9 +6,10 @@ services:
     image: traefik/whoami
     labels:
       - sablier.enable=true
-      - sablier.group=test
     deploy:
       labels:
+        - sablier.enable=true
+        - sablier.group=loadbalancer
         # Enable Traefik for this service
         - traefik.enable=true
         - traefik.swarm.network=swarm2swarm

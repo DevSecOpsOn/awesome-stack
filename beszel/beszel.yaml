@@ -6,9 +6,10 @@ services:
     image: henrygd/beszel:latest
     labels:
       - sablier.enable=true
-      - sablier.group=monitoring
     deploy:
       labels:
+        - sablier.enable=true
+        - sablier.group=monitoring
         - traefik.enable=true
         - traefik.swarm.lbswarm=false
         - traefik.swarm.network=swarm2swarm
@@ -50,6 +51,8 @@ services:
       mode: replicated
       replicas: 1
       labels:
+        - sablier.enable=true
+        - sablier.group=monitoring 
         - "traefik.enable=true"
         - "traefik.http.services.beszel-agent.loadbalancer.server.port=45876"
       update_config:

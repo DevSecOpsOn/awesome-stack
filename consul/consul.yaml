@@ -5,6 +5,8 @@ services:
     image: hashicorp/consul:1.21.3
     deploy:
       labels:
+        - sablier.enable=true
+        - sablier.group=infra
         - SERVICE_IGNORE=false
         - traefik.enable=true
         - traefik.swarm.lbswarm=false
@@ -51,6 +53,8 @@ services:
       labels:
         - "SERVICE_IGNORE=false"
         - traefik.enable=false
+        - sablier.enable=true
+        - sablier.group=infra 
       replicas: 1
       mode: replicated
       endpoint_mode: vip
