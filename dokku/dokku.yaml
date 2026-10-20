@@ -58,6 +58,7 @@ services:
     #   - "2222:22"
     networks:
       - docker2docker
+      - compose2compose
 
 volumes:
   dokku_data:
@@ -68,5 +69,6 @@ volumes:
     driver: local
 
 networks:
+  compose2compose:
   docker2docker:
     external: true

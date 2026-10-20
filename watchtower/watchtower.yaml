@@ -37,7 +37,9 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
     networks:
       - docker2docker
+      - compose2compose
 
 networks:
+  compose2compose:
   docker2docker:
     external: true

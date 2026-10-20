@@ -35,6 +35,7 @@ services:
       - ./configs/redis.conf:/usr/local/etc/redis
     networks:
       - docker2docker
+      - compose2compose
 
   insight:
     image: redis/redisinsight:latest
@@ -82,11 +83,13 @@ services:
       - insight_data:/data
     networks:
       - docker2docker
+      - compose2compose
 
 volumes:
   server_data:
   insight_data:
 
 networks:
+  compose2compose:
   docker2docker:
     external: true

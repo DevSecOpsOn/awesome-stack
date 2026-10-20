@@ -43,6 +43,7 @@ services:
       - uploads:/hedgedoc/public/uploads:rw
     networks:
       - docker2docker
+      - compose2compose
 
 volumes:
   uploads:
@@ -51,5 +52,6 @@ volumes:
     external: true
 
 networks:
+  compose2compose:
   docker2docker:
     external: true

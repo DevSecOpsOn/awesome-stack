@@ -41,12 +41,14 @@ services:
       STRATEGY_BLOCKING_DEFAULT_TIMEOUT: "1m"
       STRATEGY_DYNAMIC_SHOW_DETAILS_BY_DEFAULT: "true"
     # ports:
-    #   - '10000:10000'
+    #   - '10000:10000' 
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     networks:
       - docker2docker
+      - compose2compose
 
 networks:
+  compose2compose:
   docker2docker:
     external: true

@@ -42,7 +42,9 @@ services:
     #   - "8008:80"
     networks:
       - docker2docker
+      - compose2compose
 
 networks:
+  compose2compose:
   docker2docker:
     external: true

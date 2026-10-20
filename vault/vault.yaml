@@ -50,7 +50,9 @@ services:
     command: "vault server -config /vault/config/"
     networks:
       - docker2docker
+      - compose2compose
 
 networks:
+  compose2compose:
   docker2docker:
       external: true

@@ -48,6 +48,7 @@ services:
       - bb_data:/var/lib/drone/
     networks:
       - docker2docker
+      - compose2compose
 
   server_github:
     image: drone/drone:2
@@ -93,6 +94,7 @@ services:
       - gh_data:/var/lib/drone/
     networks:
       - docker2docker
+      - compose2compose
 
   runner:
     image: drone/drone-runner-docker:1
@@ -126,6 +128,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
     networks:
       - docker2docker
+      - compose2compose
 
 volumes:
   bb_data:
@@ -134,5 +137,6 @@ volumes:
     driver: local
 
 networks:
+  compose2compose:
   docker2docker:
     external: true

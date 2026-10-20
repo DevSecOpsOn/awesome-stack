@@ -53,11 +53,13 @@ services:
     #   - "8080:8080"
     networks:
       - docker2docker
+      - compose2compose
 
 volumes:
   dozzle_data:
     driver: local
 
 networks:
+  compose2compose:
   docker2docker:
     external: true

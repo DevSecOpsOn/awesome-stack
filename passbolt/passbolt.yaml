@@ -57,6 +57,7 @@ services:
       - ./scripts/user_creation.sh:/usr/share/php/passbolt/user_creation.sh:rw
     networks:
       - docker2docker
+      - compose2compose
 
 volumes:
   database_volume:
@@ -67,5 +68,6 @@ volumes:
     driver: local
 
 networks:
+  compose2compose:
   docker2docker:
     external: true

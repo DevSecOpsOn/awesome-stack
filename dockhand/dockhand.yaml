@@ -44,9 +44,11 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - dockhand_data:/app/data
     networks:
-      - docker2docker # Required if container has multiple networks
+      - docker2docker
+      - compose2compose # Required if container has multiple networks
 
 networks:
+  compose2compose:
   docker2docker:
     external: true  # Assumes Traefik network already exists
 

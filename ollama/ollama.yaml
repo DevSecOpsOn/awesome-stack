@@ -44,11 +44,13 @@ services:
       - 11434:11434
     networks:
       - docker2docker
+      - compose2compose
 
 volumes:
   ollama_data:
     driver: local
 
 networks:
+  compose2compose:
   docker2docker:
     external: true

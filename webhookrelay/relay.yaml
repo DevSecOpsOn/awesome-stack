@@ -57,5 +57,6 @@ services:
       - ./.env/github.env
 
 networks:
+  compose2compose:
   docker2docker:
     external: true

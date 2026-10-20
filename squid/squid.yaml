@@ -53,6 +53,7 @@ services:
       - 3128:3128
     networks:
       - docker2docker
+      - compose2compose
 
   squid-exporter:
     image: boynux/squid-exporter:latest
@@ -83,6 +84,7 @@ services:
     #   - "9301:9301"
     networks:
       - docker2docker
+      - compose2compose
     depends_on:
       - squid
 
@@ -93,5 +95,6 @@ volumes:
     driver: local
 
 networks:
+  compose2compose:
   docker2docker:
     external: true

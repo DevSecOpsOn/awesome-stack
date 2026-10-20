@@ -38,6 +38,7 @@ services:
       - ./configs/db.properties:/var/lib/go-server/db/db.properties:rw
     networks:
       - docker2docker
+      - compose2compose
 
   agent1:
     image: gocd/gocd-agent-alpine:v25.3.0
@@ -67,11 +68,13 @@ services:
       GO_SERVER_URL: http://gocd_server:8153/go
     networks:
       - docker2docker
+      - compose2compose
 
 volumes:
   go_server:
     driver: local
 
 networks:
+  compose2compose:
   docker2docker:
     external: true

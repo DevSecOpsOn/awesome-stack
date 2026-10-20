@@ -49,7 +49,9 @@ services:
     #   - 4140:4140
     networks:
       - docker2docker
+      - compose2compose
 
 networks:
+  compose2compose:
     docker2docker:
         external: true

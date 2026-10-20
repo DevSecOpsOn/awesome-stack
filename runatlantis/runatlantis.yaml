@@ -46,11 +46,13 @@ services:
       - atlantis:/src:ro
     networks:
       - docker2docker
+      - compose2compose
 
 volumes:
   atlantis:
     driver: local
 
 networks:
+  compose2compose:
   docker2docker:
     external: true

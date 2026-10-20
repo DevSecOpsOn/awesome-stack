@@ -42,6 +42,7 @@ services:
       - logs:/opt/teamcity/logs
     networks:
       - docker2docker
+      - compose2compose
 
   agent:
     image: "jetbrains/teamcity-agent:2025.07"
@@ -72,6 +73,7 @@ services:
       - agent_conf:/data/teamcity_agent/conf
     networks:
       - docker2docker
+      - compose2compose
 
 volumes:
   datadir:
@@ -82,5 +84,6 @@ volumes:
     driver: local
 
 networks:
+  compose2compose:
   docker2docker:
     external: true
