@@ -8,7 +8,7 @@ services:
         - SERVICE_IGNORE=false
         - traefik.enable=true
         - traefik.swarm.lbswarm=false
-        - traefik.swarm.network=docker2docker
+        - traefik.swarm.network=swarm2swarm
         - traefik.http.routers.consul-server.entrypoints=web,websecure
         - traefik.http.routers.consul-server.rule=Host(`consul.docker.local`)
         - traefik.http.services.consul-server.loadbalancer.server.port=8500
@@ -42,8 +42,8 @@ services:
       - "./configs/server_config/config.json:/consul/config/config.json:rw"
       - "./scripts:/consul/scripts:rw"
     networks:
-      - docker2docker
-      - compose2compose
+      - swarm2swarm
+      - compose2swarm
 
   client:
     image: hashicorp/consul:1.21.3
@@ -71,8 +71,8 @@ services:
       - agent_data:/consul/data
       - "./configs/client_config/:/consul/config/:rw"
     networks:
-      - docker2docker
-      - compose2compose
+      - swarm2swarm
+      - compose2swarm
 
 
 volumes:
@@ -81,6 +81,7 @@ volumes:
 
 
 networks:
-  compose2compose:
-  docker2docker:
+  compose2swarm:
+    external: true
+  swarm2swarm:
     external: true

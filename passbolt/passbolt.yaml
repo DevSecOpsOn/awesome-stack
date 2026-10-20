@@ -13,7 +13,7 @@ services:
       labels:
         - traefik.enable=true
         - traefik.swarm.lbswarm=false
-        - traefik.swarm.network=docker2docker
+        - traefik.swarm.network=swarm2swarm
         - traefik.http.routers.passbolt_server.entrypoints=web,websecure
         - traefik.http.routers.passbolt_server.rule=Host(`passbolt.docker.local`)
         - traefik.http.services.passbolt_server.loadbalancer.server.port=8080
@@ -56,8 +56,8 @@ services:
       - jwt_volume:/etc/passbolt/jwt
       - ./scripts/user_creation.sh:/usr/share/php/passbolt/user_creation.sh:rw
     networks:
-      - docker2docker
-      - compose2compose
+      - swarm2swarm
+      - compose2swarm
 
 volumes:
   database_volume:
@@ -68,6 +68,7 @@ volumes:
     driver: local
 
 networks:
-  compose2compose:
-  docker2docker:
+  compose2swarm:
+    external: true
+  swarm2swarm:
     external: true

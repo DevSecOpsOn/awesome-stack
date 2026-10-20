@@ -11,7 +11,7 @@ services:
       labels:
         - traefik.enable=true
         - traefik.swarm.lbswarm=false
-        - traefik.swarm.network=docker2docker
+        - traefik.swarm.network=swarm2swarm
         - traefik.http.routers.bitbucket_server.entrypoints=web,websecure
         - traefik.http.routers.bitbucket_server.rule=Host(`droneci-bb.docker.local`)
         - traefik.http.services.bitbucket_server.loadbalancer.server.port=80
@@ -47,8 +47,8 @@ services:
     volumes:
       - bb_data:/var/lib/drone/
     networks:
-      - docker2docker
-      - compose2compose
+      - swarm2swarm
+      - compose2swarm
 
   server_github:
     image: drone/drone:2
@@ -59,7 +59,7 @@ services:
       labels:
         - traefik.enable=true
         - traefik.swarm.lbswarm=false
-        - traefik.swarm.network=docker2docker
+        - traefik.swarm.network=swarm2swarm
         - traefik.http.routers.github_server.entrypoints=web,websecure
         - traefik.http.routers.github_server.rule=Host(`droneci-gh.docker.local`)
         - traefik.http.services.github_server.loadbalancer.server.port=80
@@ -93,8 +93,8 @@ services:
     volumes:
       - gh_data:/var/lib/drone/
     networks:
-      - docker2docker
-      - compose2compose
+      - swarm2swarm
+      - compose2swarm
 
   runner:
     image: drone/drone-runner-docker:1
@@ -102,7 +102,7 @@ services:
     deploy:
       labels:
         - traefik.enable=true
-        - traefik.swarm.network=docker2docker
+        - traefik.swarm.network=swarm2swarm
         - traefik.swarm.lbswarm=false
         - traefik.http.routers.runner_agent.entrypoints=web
         - traefik.http.routers.runner_agent.rule=Host(`droneci-runner.docker.local`) && PathPrefix(`/dashboard`)
@@ -127,8 +127,8 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     networks:
-      - docker2docker
-      - compose2compose
+      - swarm2swarm
+      - compose2swarm
 
 volumes:
   bb_data:
@@ -137,6 +137,7 @@ volumes:
     driver: local
 
 networks:
-  compose2compose:
-  docker2docker:
+  compose2swarm:
+    external: true
+  swarm2swarm:
     external: true

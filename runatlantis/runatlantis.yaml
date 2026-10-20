@@ -11,7 +11,7 @@ services:
       labels:
         - traefik.enable=true
         - traefik.swarm.lbswarm=false
-        - traefik.swarm.network=docker2docker
+        - traefik.swarm.network=swarm2swarm
         - traefik.http.routers.atlantis_server.entrypoints=web,websecure
         - traefik.http.routers.atlantis_server.rule=Host(`atlantis.docker.local`)
         - traefik.http.services.atlantis_server.loadbalancer.server.port=4141
@@ -45,14 +45,15 @@ services:
       - ${HOME}/.ssh:/.ssh:ro
       - atlantis:/src:ro
     networks:
-      - docker2docker
-      - compose2compose
+      - swarm2swarm
+      - compose2swarm
 
 volumes:
   atlantis:
     driver: local
 
 networks:
-  compose2compose:
-  docker2docker:
+  compose2swarm:
+    external: true
+  swarm2swarm:
     external: true

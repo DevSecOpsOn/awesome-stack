@@ -10,7 +10,7 @@ services:
       labels:
         - traefik.enable=true
         - traefik.swarm.lbswarm=false
-        - traefik.swarm.network=docker2docker
+        - traefik.swarm.network=swarm2swarm
         - traefik.http.routers.server.entrypoints=web,websecure
         - traefik.http.routers.server.rule=Host(`portainer.docker.local`)
         - traefik.http.services.server.loadbalancer.server.port=9000
@@ -39,8 +39,8 @@ services:
       - portainer_data:/data
       - /var/run/docker.sock:/var/run/docker.sock
     networks:
-      - docker2docker
-      - compose2compose
+      - swarm2swarm
+      - compose2swarm
 
   agent:
     image: portainer/agent
@@ -74,14 +74,15 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - /var/lib/docker/volumes:/var/lib/docker/volumes
     networks:
-      - docker2docker
-      - compose2compose
+      - swarm2swarm
+      - compose2swarm
 
 volumes:
   portainer_data:
     driver: local
 
 networks:
-  compose2compose:
-  docker2docker:
+  compose2swarm:
+    external: true
+  swarm2swarm:
     external: true

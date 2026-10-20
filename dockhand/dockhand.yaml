@@ -10,7 +10,7 @@ services:
       labels:
         - traefik.enable=true
         - traefik.swarm.lbswarm=false
-        - traefik.swarm.network=docker2docker
+        - traefik.swarm.network=swarm2swarm
         - traefik.http.routers.dockhand.entrypoints=web,websecure
         - traefik.http.routers.dockhand.rule=Host(`dockhand.docker.local`)
         - traefik.http.services.dockhand.loadbalancer.server.port=3000
@@ -44,12 +44,13 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - dockhand_data:/app/data
     networks:
-      - docker2docker
-      - compose2compose # Required if container has multiple networks
+      - swarm2swarm
+      - compose2swarm # Required if container has multiple networks
 
 networks:
-  compose2compose:
-  docker2docker:
+  compose2swarm:
+    external: true
+  swarm2swarm:
     external: true  # Assumes Traefik network already exists
 
 volumes:

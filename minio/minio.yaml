@@ -12,7 +12,7 @@ services:
       labels:
         - traefik.enable=true
         - traefik.swarm.lbswarm=false
-        - traefik.swarm.network=docker2docker
+        - traefik.swarm.network=swarm2swarm
         - traefik.http.routers.minio_console.entrypoints=web,websecure
         - traefik.http.routers.minio_console.rule=Host(`minio.docker.local`)
         - traefik.http.services.minio_console.loadbalancer.server.port=9001
@@ -67,12 +67,13 @@ services:
     volumes:
       - minio_data:/data
     networks:
-      - docker2docker
-      - compose2compose
+      - swarm2swarm
+      - compose2swarm
 
 networks:
-  compose2compose:
-  docker2docker:
+  compose2swarm:
+    external: true
+  swarm2swarm:
     external: true
 
 volumes:

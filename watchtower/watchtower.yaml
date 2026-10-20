@@ -11,7 +11,7 @@ services:
       labels:
         - traefik.enable=true
         - traefik.swarm.lbswarm=false
-        - traefik.swarm.network=docker2docker
+        - traefik.swarm.network=swarm2swarm
         - traefik.http.routers.watchtower_server.entrypoints=web,websecure
         - traefik.http.routers.watchtower_server.rule=Host(`watchtower.docker.local`)
         - traefik.http.services.watchtower_server.loadbalancer.server.port=0000
@@ -36,10 +36,11 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     networks:
-      - docker2docker
-      - compose2compose
+      - swarm2swarm
+      - compose2swarm
 
 networks:
-  compose2compose:
-  docker2docker:
+  compose2swarm:
+    external: true
+  swarm2swarm:
     external: true

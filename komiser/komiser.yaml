@@ -11,7 +11,7 @@ services:
       labels:
         - traefik.enable=true
         - traefik.swarm.lbswarm=false
-        - traefik.swarm.network=docker2docker
+        - traefik.swarm.network=swarm2swarm
         - traefik.http.routers.komiser_app.entrypoints=web,websecure
         - traefik.http.routers.komiser_app.rule=Host(`komiser.docker.local`)
         - traefik.http.services.komiser_app.loadbalancer.server.port=3000
@@ -51,14 +51,15 @@ services:
       - ./config/config.toml:/etc/komiser/config.toml:rw
       - komiser_data:/tmp/komiser
     networks:
-      - docker2docker
-      - compose2compose
+      - swarm2swarm
+      - compose2swarm
 
 volumes:
   komiser_data:
     driver: local
 
 networks:
-  compose2compose:
-  docker2docker:
+  compose2swarm:
+    external: true
+  swarm2swarm:
     external: true

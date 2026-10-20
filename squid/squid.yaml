@@ -11,7 +11,7 @@ services:
       labels:
         - traefik.enable=true
         - traefik.swarm.lbswarm=false
-        - traefik.swarm.network=docker2docker
+        - traefik.swarm.network=swarm2swarm
         - traefik.http.routers.squid_proxy.entrypoints=web,websecure
         - traefik.http.routers.squid_proxy.rule=Host(`squid.docker.local`)
         - traefik.http.services.squid_proxy.loadbalancer.server.port=3128
@@ -52,8 +52,8 @@ services:
     ports:
       - 3128:3128
     networks:
-      - docker2docker
-      - compose2compose
+      - swarm2swarm
+      - compose2swarm
 
   squid-exporter:
     image: boynux/squid-exporter:latest
@@ -83,8 +83,8 @@ services:
     # ports:
     #   - "9301:9301"
     networks:
-      - docker2docker
-      - compose2compose
+      - swarm2swarm
+      - compose2swarm
     depends_on:
       - squid
 
@@ -95,6 +95,7 @@ volumes:
     driver: local
 
 networks:
-  compose2compose:
-  docker2docker:
+  compose2swarm:
+    external: true
+  swarm2swarm:
     external: true

@@ -11,7 +11,7 @@ services:
       labels:
         - traefik.enable=true
         - traefik.swarm.lbswarm=false
-        - traefik.swarm.network=docker2docker
+        - traefik.swarm.network=swarm2swarm
         - traefik.http.routers.fluentbit_server.entrypoints=web,websecure
         - traefik.http.routers.fluentbit_server.rule=Host(`fluentbit.docker.local`)
         - traefik.http.services.fluentbit_server.loadbalancer.server.port=2020
@@ -51,12 +51,13 @@ services:
       # Uncooment if you running on Linux OS
       # - /var/lib/docker/containers:/var/lib/docker/containers:ro
     networks:
-      - docker2docker
-      - compose2compose
+      - swarm2swarm
+      - compose2swarm
 
 networks:
-  compose2compose:
-  docker2docker:
+  compose2swarm:
+    external: true
+  swarm2swarm:
     external: true
 
 volumes:

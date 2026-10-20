@@ -11,7 +11,7 @@ services:
       labels:
         - traefik.enable=true
         - traefik.swarm.lbswarm=false
-        - traefik.swarm.network=docker2docker
+        - traefik.swarm.network=swarm2swarm
         - traefik.http.routers.activepieces.entrypoints=web,websecure
         - traefik.http.routers.activepieces.rule=Host(`activepieces.docker.local`)
         - traefik.http.services.activepieces.loadbalancer.server.port=80
@@ -68,8 +68,8 @@ services:
     # ports:
     #   - "80:80"
     networks:
-      - docker2docker
-      - compose2compose
+      - swarm2swarm
+      - compose2swarm
 
   worker:
     image: activepieces/activepieces:0.70.5
@@ -111,8 +111,8 @@ services:
     volumes:
       - worker_data:/usr/src/app/packages/server/api/src/assets
     networks:
-      - docker2docker
-      - compose2compose
+      - swarm2swarm
+      - compose2swarm
 
 volumes:
   server_data:
@@ -121,6 +121,7 @@ volumes:
     driver: local
 
 networks:
-  compose2compose:
-  docker2docker:
+  compose2swarm:
+    external: true
+  swarm2swarm:
     external: true

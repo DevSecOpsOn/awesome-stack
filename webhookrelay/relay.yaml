@@ -57,6 +57,7 @@ services:
       - ./.env/github.env
 
 networks:
-  compose2compose:
-  docker2docker:
+  compose2swarm:
+    external: true
+  swarm2swarm:
     external: true

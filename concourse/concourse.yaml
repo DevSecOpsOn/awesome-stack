@@ -9,7 +9,7 @@ services:
       labels:
         - traefik.enable=true
         - traefik.swarm.lbswarm=false
-        - traefik.swarm.network=docker2docker
+        - traefik.swarm.network=swarm2swarm
         - traefik.http.routers.concourse_web.entrypoints=web,websecure
         - traefik.http.routers.concourse_web.rule=Host(`concourse.docker.local`)
         - traefik.http.services.concourse_web.loadbalancer.server.port=8080
@@ -56,8 +56,8 @@ services:
       - "./scripts/web:/concourse-keys:rw"
       - "./config/config.yaml:/opt/concourse/config.yml:rw"
     networks:
-      - docker2docker
-      - compose2compose
+      - swarm2swarm
+      - compose2swarm
 
   worker:
     image: concourse/concourse:8.1.1
@@ -108,8 +108,8 @@ services:
       - /sys/fs/cgroup:/sys/fs/cgroup:ro
       - "./scripts/worker:/concourse-keys:ro"
     networks:
-      - docker2docker
-      - compose2compose
+      - swarm2swarm
+      - compose2swarm
 
 volumes:
   server_data:
@@ -118,6 +118,7 @@ volumes:
     driver: local
 
 networks:
-  compose2compose:
-  docker2docker:
+  compose2swarm:
+    external: true
+  swarm2swarm:
     external: true

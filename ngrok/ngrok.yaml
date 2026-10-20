@@ -11,7 +11,7 @@ services:
       labels:
         - traefik.enable=true
         - traefik.swarm.lbswarm=false
-        - traefik.swarm.network=docker2docker
+        - traefik.swarm.network=swarm2swarm
         - traefik.http.routers.bitbucket_ngrok.entrypoints=web,websecure
         - traefik.http.routers.bitbucket_ngrok.rule=Host(`ngrok-bb.docker.local`)
         - traefik.http.services.bitbucket_ngrok.loadbalancer.server.port=4040
@@ -47,8 +47,8 @@ services:
       - source: bitbucket
         target: /etc/ngrok.yml # refer to https://ngrok.com/docs/agent/config/v3#basic
     networks:
-      - docker2docker
-      - compose2compose
+      - swarm2swarm
+      - compose2swarm
 
   github:
     image: ngrok/ngrok:latest
@@ -59,7 +59,7 @@ services:
       labels:
         - traefik.enable=true
         - traefik.swarm.lbswarm=false
-        - traefik.swarm.network=docker2docker
+        - traefik.swarm.network=swarm2swarm
         - traefik.http.routers.github_ngrok.entrypoints=web,websecure
         - traefik.http.routers.github_ngrok.rule=Host(`ngrok-gh.docker.local`)
         - traefik.http.services.github_ngrok.loadbalancer.server.port=4040
@@ -98,12 +98,13 @@ services:
       - NGROK_AUTHTOKEN=${NGROK_GITHUB_AUTHTOKEN}
       - NGROK_DOMAIN_GITHUB=${NGROK_DOMAIN_GITHUB}
     networks:
-      - docker2docker
-      - compose2compose
+      - swarm2swarm
+      - compose2swarm
 
 networks:
-  compose2compose:
-  docker2docker:
+  compose2swarm:
+    external: true
+  swarm2swarm:
     external: true
 
 configs:

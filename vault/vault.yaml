@@ -13,7 +13,7 @@ services:
       labels:
         - traefik.enable=true
         - traefik.swarm.lbswarm=false
-        - traefik.swarm.network=docker2docker
+        - traefik.swarm.network=swarm2swarm
         - traefik.http.routers.vault_server.entrypoints=web,websecure
         - traefik.http.routers.vault_server.rule=Host(`vault.docker.local`)
         - traefik.http.services.vault_server.loadbalancer.server.port=8200
@@ -49,10 +49,11 @@ services:
       - ./config/:/vault/config/:rw
     command: "vault server -config /vault/config/"
     networks:
-      - docker2docker
-      - compose2compose
+      - swarm2swarm
+      - compose2swarm
 
 networks:
-  compose2compose:
-  docker2docker:
+  compose2swarm:
+    external: true
+  swarm2swarm:
       external: true

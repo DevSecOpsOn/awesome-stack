@@ -11,7 +11,7 @@ services:
       labels:
         # Enable Traefik for this service
         - traefik.enable=true
-        - traefik.swarm.network=docker2docker
+        - traefik.swarm.network=swarm2swarm
         # Docker provider configuration (primary)
         - traefik.http.routers.portal1.entrypoints=web,websecure
         - traefik.http.routers.portal1.rule=Host(`portal1.docker.local`)
@@ -44,8 +44,8 @@ services:
         max-size: "200k"
         max-file: "10"
     networks:
-      - docker2docker
-      - compose2compose
+      - swarm2swarm
+      - compose2swarm
 
   portal2:
     image: traefik/whoami
@@ -56,7 +56,7 @@ services:
       labels:
         # Enable Traefik for this service
         - traefik.enable=true
-        - traefik.swarm.network=docker2docker
+        - traefik.swarm.network=swarm2swarm
         # Docker provider configuration (primary)
         - traefik.http.routers.portal2.entrypoints=web,websecure
         - traefik.http.routers.portal2.rule=Host(`portal2.docker.local`)
@@ -88,10 +88,11 @@ services:
         max-size: "200k"
         max-file: "10"
     networks:
-      - docker2docker
-      - compose2compose
+      - swarm2swarm
+      - compose2swarm
 
 networks:
-  compose2compose:
-  docker2docker:
+  compose2swarm:
+    external: true
+  swarm2swarm:
     external: true

@@ -41,11 +41,11 @@ If you haven't faced any issue and all above commands worked as expected move fo
 
 Docker allow us to create _overlay_ networks this creating some communication isolation between container(s). Secondly, advantage is the capability to talk with another containers using their service names (I will show some examples later on).
 
-Let's create a docker2docker network to allow comminication between containers **only** in this network by running below command in the terminal.
+Let's create a swarm2swarm network to allow comminication between containers **only** in this network by running below command in the terminal.
 
 ```(shell)
-docker network create docker2docker --subnet 10.1.0.1/16 --driver overlay --attachable && \
-docker network ls | grep docker2docker
+docker network create swarm2swarm --subnet 10.1.0.1/16 --driver overlay --attachable && \
+docker network ls | grep swarm2swarm
 ```
 
 ---

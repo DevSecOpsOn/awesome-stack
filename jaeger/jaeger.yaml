@@ -11,7 +11,7 @@ services:
       labels:
         - traefik.enable=true
         - traefik.swarm.lbswarm=false
-        - traefik.swarm.network=docker2docker
+        - traefik.swarm.network=swarm2swarm
         - traefik.http.routers.jaeger_ui.entrypoints=web,websecure
         - traefik.http.routers.jaeger_ui.rule=Host(`jaeger.docker.local`)
         - traefik.http.services.jaeger_ui.loadbalancer.server.port=16686
@@ -55,8 +55,8 @@ services:
     #   - "4317:4317"       # OTLP gRPC receiver
     #   - "4318:4318"       # OTLP HTTP receiver
     networks:
-      - docker2docker
-      - compose2compose
+      - swarm2swarm
+      - compose2swarm
 
   jaeger-query:
     image: jaegertracing/jaeger-query:latest
@@ -67,7 +67,7 @@ services:
       labels:
         - traefik.enable=true
         - traefik.swarm.lbswarm=false
-        - traefik.swarm.network=docker2docker
+        - traefik.swarm.network=swarm2swarm
         - traefik.http.routers.jaeger_query.entrypoints=web,websecure
         - traefik.http.routers.jaeger_query.rule=Host(`jaeger-query.docker.local`)
         - traefik.http.services.jaeger_query.loadbalancer.server.port=16686
@@ -102,10 +102,11 @@ services:
     # ports:
     #   - "16687:16686"
     networks:
-      - docker2docker
-      - compose2compose
+      - swarm2swarm
+      - compose2swarm
 
 networks:
-  compose2compose:
-  docker2docker:
+  compose2swarm:
+    external: true
+  swarm2swarm:
     external: true

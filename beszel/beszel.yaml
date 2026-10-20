@@ -11,7 +11,7 @@ services:
       labels:
         - traefik.enable=true
         - traefik.swarm.lbswarm=false
-        - traefik.swarm.network=docker2docker
+        - traefik.swarm.network=swarm2swarm
         - traefik.http.routers.beszel_mon.entrypoints=web,websecure
         - traefik.http.routers.beszel_mon.rule=Host(`beszel.docker.local`)
         - traefik.http.services.beszel_mon.loadbalancer.server.port=8090
@@ -40,8 +40,8 @@ services:
     extra_hosts:
       - host.docker.internal:host-gateway
     networks:
-      - docker2docker
-      - compose2compose
+      - swarm2swarm
+      - compose2swarm
 
   agent:
     image: henrygd/beszel-agent
@@ -83,8 +83,8 @@ services:
       # monitor other disks / partitions by mounting a folder in /extra-filesystems
       # - /mnt/disk/.beszel:/extra-filesystems/sda1:ro
     networks:
-      - docker2docker
-      - compose2compose
+      - swarm2swarm
+      - compose2swarm
 
 volumes:
   beszel_data:
@@ -93,6 +93,7 @@ volumes:
     external: true
 
 networks:
-  compose2compose:
-  docker2docker:
+  compose2swarm:
+    external: true
+  swarm2swarm:
       external: true
