@@ -48,11 +48,13 @@ services:
       - harness-data:/data
     networks:
       - docker2docker
+      - compose2compose
 
 volumes:
   harness-data:
     driver: local
 
 networks:
+  compose2compose:
   docker2docker:
     external: true

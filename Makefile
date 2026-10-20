@@ -4,28 +4,28 @@ PODMAN_CLI := $(shell which podman 2>/dev/null)
 CONTAINER_ENGINE := $(if $(DOCKER_CLI),$(DOCKER_CLI),$(if $(PODMAN_CLI),$(PODMAN_CLI),docker))
 SWARM_ADDR_ := $(shell ifconfig | grep -E "inet 192.168.2" | awk '{print $$2}')
 # Stack list
-AI := activepieces n8n ollama
+AI := n8n ollama
 AIML := aiml
-PROXY := traefik ngrok squid
+PROXY := traefik ngrok
 DATABASES := db redis
 DOCS := hedgedoc
-CI_CD := concourse droneci harness gocd jenkins teamcity
+CI_CD := droneci harness
 CLOUD := ministack miniblue
 INFRA := consul runatlantis sablier
-MONITORING := beszel dozzle grafana jaeger otelcol prometheus dockhand
+MONITORING := dozzle grafana jaeger otelcol prometheus dockhand
 OBSERVABILITY :=
-PASS := dokku dokploy
-PORTALS := homarr portainer
+PAAS := dokploy
+PORTALS := portainer
 VCS := gogs gitea
-SECURITY := vault passbolt bitor
+SECURITY := vault passbolt
 BACKUP := repliqate
 STORAGE := minio
-DEVOPS := $(PROXY) $(DATABASES) $(CI_CD) $(CLOUD) $(PASS) $(INFRA) $(PORTALS) $(MONITORING) $(VCS) $(STORAGE)
+DEVOPS := $(AI) $(PROXY) $(DATABASES) $(CI_CD) $(CLOUD) $(PAAS) $(INFRA) $(PORTALS) $(MONITORING) $(VCS) $(STORAGE)
 DEVSECOPS := $(DEVOPS) $(OBSERVABILITY) $(SECURITY)
 HOSTS_VERSION := v19
 
 # Resources to prune
-RESOURCES := container volume image
+RESOURCES := container volume
 
 define HOST_ENTRIES
 #### docker-stack: $(HOSTS_VERSION) ####
@@ -135,7 +135,7 @@ devops: show-stacks update-hosts
 	@for stack in $(DEVOPS); do \
 	  FILE=$$(find $$stack -maxdepth 1 -type f \( -name "*.yml" -o -name "*.yaml" \) | head -n 1); \
 	  if [ -n "$$FILE" ]; then \
-	    $(CONTAINER_ENGINE) stack deploy -c $$FILE $$stack; \
+	    $(CONTAINER_ENGINE) stack deploy --prune -c $$FILE $$stack; \
 	    echo "🛫 Stack $$stack deployed using $$FILE"; \
 		echo "----"; \
 	  else \
@@ -150,7 +150,7 @@ devsecops: show-stacks update-hosts
 	@for stack in $(DEVSECOPS); do \
 	  FILE=$$(find $$stack -maxdepth 1 -type f \( -name "*.yml" -o -name "*.yaml" \) | head -n 1); \
 	  if [ -n "$$FILE" ]; then \
-	    $(CONTAINER_ENGINE) stack deploy -c $$FILE $$stack; \
+	    $(CONTAINER_ENGINE) stack deploy --prune -c $$FILE $$stack; \
 	    echo "🛫 Stack $$stack deployed using $$FILE"; \
 		echo "----"; \
 	  else \

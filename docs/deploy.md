@@ -127,10 +127,12 @@ services:
       - 3306
     networks:
       - docker2docker
+      - compose2compose
     secrets:
       - DOCKER_SECRET_DB
 
 networks:
+  compose2compose:
   docker2docker:
     external: true
 

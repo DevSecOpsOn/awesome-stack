@@ -45,6 +45,7 @@ services:
         max-file: "10"
     networks:
       - docker2docker
+      - compose2compose
 
   portal2:
     image: traefik/whoami
@@ -88,7 +89,9 @@ services:
         max-file: "10"
     networks:
       - docker2docker
+      - compose2compose
 
 networks:
+  compose2compose:
   docker2docker:
     external: true

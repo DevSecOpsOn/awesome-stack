@@ -50,6 +50,7 @@ services:
       - DOCKER_SECRET_DB
     networks:
       - docker2docker
+      - compose2compose
 
 volumes:
   gogs_data:
@@ -60,5 +61,6 @@ secrets:
     external: true
 
 networks:
+  compose2compose:
     docker2docker:
         external: true

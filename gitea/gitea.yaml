@@ -45,6 +45,7 @@ services:
       GITEA_RUNNER_REGISTRATION_TOKEN: "${GITEA_RUNNER_REGISTRATION_TOKEN}"
     networks:
       - docker2docker
+      - compose2compose
     volumes:
       - gitea:/data
       - /etc/timezone:/etc/timezone:ro
@@ -87,10 +88,12 @@ services:
       GITEA_RUNNER_REGISTRATION_TOKEN: "${GITEA_DOCKER_TOKEN}"
     networks:
       - docker2docker
+      - compose2compose
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
 
 networks:
+  compose2compose:
   docker2docker:
       external: true
 

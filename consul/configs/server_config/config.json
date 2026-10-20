@@ -4,6 +4,7 @@
   "node_name": "consul-server-1",
   "server": true,
   "bootstrap": true,
+  "server_rejoin_age_max": "8760h",
   "ui_config": {
     "enabled": true
   },

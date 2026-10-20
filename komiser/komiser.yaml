@@ -52,11 +52,13 @@ services:
       - komiser_data:/tmp/komiser
     networks:
       - docker2docker
+      - compose2compose
 
 volumes:
   komiser_data:
     driver: local
 
 networks:
+  compose2compose:
   docker2docker:
     external: true

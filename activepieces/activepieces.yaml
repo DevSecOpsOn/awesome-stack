@@ -69,6 +69,7 @@ services:
     #   - "80:80"
     networks:
       - docker2docker
+      - compose2compose
 
   worker:
     image: activepieces/activepieces:0.70.5
@@ -111,6 +112,7 @@ services:
       - worker_data:/usr/src/app/packages/server/api/src/assets
     networks:
       - docker2docker
+      - compose2compose
 
 volumes:
   server_data:
@@ -119,5 +121,6 @@ volumes:
     driver: local
 
 networks:
+  compose2compose:
   docker2docker:
     external: true

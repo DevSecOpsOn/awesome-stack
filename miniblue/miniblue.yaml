@@ -45,11 +45,13 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
     networks:
       - docker2docker
+      - compose2compose
     # Rafael Caer - 21 3179-2341
 
 volumes:
   miniblue_data:
 
 networks:
+  compose2compose:
   docker2docker:
     external: true

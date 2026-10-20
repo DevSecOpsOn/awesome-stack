@@ -43,6 +43,7 @@ services:
       - "./scripts:/consul/scripts:rw"
     networks:
       - docker2docker
+      - compose2compose
 
   client:
     image: hashicorp/consul:1.21.3
@@ -71,6 +72,7 @@ services:
       - "./configs/client_config/:/consul/config/:rw"
     networks:
       - docker2docker
+      - compose2compose
 
 
 volumes:
@@ -79,5 +81,6 @@ volumes:
 
 
 networks:
+  compose2compose:
   docker2docker:
     external: true

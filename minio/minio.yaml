@@ -3,7 +3,8 @@
 services:
 
   minio:
-    image: minio/minio:latest
+    image: elestio/minio
+    # image: minio/minio:RELEASE.2025-10-15T17-29-55Z
     labels:
       - sablier.enable=true
       - sablier.group=storage
@@ -67,8 +68,10 @@ services:
       - minio_data:/data
     networks:
       - docker2docker
+      - compose2compose
 
 networks:
+  compose2compose:
   docker2docker:
     external: true
 

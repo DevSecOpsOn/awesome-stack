@@ -41,7 +41,9 @@ services:
     #   - "50000:50000"
     networks:
       - docker2docker
+      - compose2compose
 
 networks:
+  compose2compose:
   docker2docker:
       external: true

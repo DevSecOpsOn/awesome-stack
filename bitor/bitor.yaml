@@ -47,10 +47,12 @@ services:
       - bitor_data:/data
     networks:
       - docker2docker
+      - compose2compose
 
 volumes:
   bitor_data:
 
 networks:
+  compose2compose:
   docker2docker:
     external: true

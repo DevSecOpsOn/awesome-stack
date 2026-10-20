@@ -70,6 +70,7 @@ services:
       - ./configs/core/app.conf:/etc/core/app.conf:ro
     networks:
       - docker2docker
+      - compose2compose
 
   jobservice:
     image: goharbor/harbor-jobservice:v2.15.0
@@ -107,6 +108,7 @@ services:
       - jobservice_data:/var/log/jobs
     networks:
       - docker2docker
+      - compose2compose
 
   registry:
     image: goharbor/registry-photon:v2.15.0
@@ -140,6 +142,7 @@ services:
       - ./configs/registry/root.crt:/etc/registry/root.crt:ro
     networks:
       - docker2docker
+      - compose2compose
 
   registryctl:
     image: goharbor/harbor-registryctl:v2.15.0
@@ -178,6 +181,7 @@ services:
       - ./configs/registry/root.crt:/etc/registry/root.crt:ro
     networks:
       - docker2docker
+      - compose2compose
 
   # trivy:
   #   image: goharbor/trivy-adapter-photon:v2.15.0
@@ -223,6 +227,7 @@ services:
   #     - trivy_data:/home/scanner/.cache
   #   networks:
   #     - docker2docker
+      - compose2compose
 
   portal:
     image: goharbor/harbor-portal:v2.15.0
@@ -250,6 +255,7 @@ services:
         max-file: "10"
     networks:
       - docker2docker
+      - compose2compose
 
   # proxy:
   #   image: goharbor/nginx-photon:v2.15.0
@@ -279,6 +285,7 @@ services:
   #     - ./configs/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
   #   networks:
   #     - docker2docker
+      - compose2compose
 
 volumes:
   core_data:
@@ -291,5 +298,6 @@ volumes:
     driver: local
 
 networks:
+  compose2compose:
   docker2docker:
     external: true

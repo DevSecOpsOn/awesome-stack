@@ -41,6 +41,7 @@ services:
       - host.docker.internal:host-gateway
     networks:
       - docker2docker
+      - compose2compose
 
   agent:
     image: henrygd/beszel-agent
@@ -83,6 +84,7 @@ services:
       # - /mnt/disk/.beszel:/extra-filesystems/sda1:ro
     networks:
       - docker2docker
+      - compose2compose
 
 volumes:
   beszel_data:
@@ -91,5 +93,6 @@ volumes:
     external: true
 
 networks:
+  compose2compose:
   docker2docker:
       external: true

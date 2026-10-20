@@ -49,10 +49,12 @@ services:
     #   - "3000:3000"
     networks:
       - docker2docker
+      - compose2compose
 
 volumes:
   dokploy_config:
 
 networks:
+  compose2compose:
   docker2docker:
     external: true

@@ -48,6 +48,7 @@ services:
         target: /etc/ngrok.yml # refer to https://ngrok.com/docs/agent/config/v3#basic
     networks:
       - docker2docker
+      - compose2compose
 
   github:
     image: ngrok/ngrok:latest
@@ -98,8 +99,10 @@ services:
       - NGROK_DOMAIN_GITHUB=${NGROK_DOMAIN_GITHUB}
     networks:
       - docker2docker
+      - compose2compose
 
 networks:
+  compose2compose:
   docker2docker:
     external: true
 
