@@ -49,7 +49,7 @@ services:
     container_name: mongo
     deploy:
       labels:
-        - sablier.enable=true
+        - sablier.enable=false
         - sablier.group=database
         - traefik.enable=true
         - traefik.swarm.network=swarm2swarm
@@ -148,7 +148,7 @@ services:
     container_name: mysql
     deploy:
       labels:
-        - sablier.enable=true
+        - sablier.enable=false
         - sablier.group=database
         - traefik.enable=false
       replicas: 1
@@ -185,7 +185,7 @@ services:
     container_name: postgres
     deploy:
       labels:
-        - sablier.enable=true
+        - sablier.enable=false
         - sablier.group=database
         - traefik.enable=false
       replicas: 1

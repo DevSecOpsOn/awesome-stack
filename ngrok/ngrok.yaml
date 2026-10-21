@@ -8,7 +8,7 @@ services:
       - sablier.enable=false
     deploy:
       labels:
-        - sablier.enable=true
+        - sablier.enable=false
         - sablier.group=proxy
         - traefik.enable=true
         - traefik.swarm.lbswarm=false

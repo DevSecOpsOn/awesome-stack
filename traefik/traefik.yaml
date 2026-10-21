@@ -75,7 +75,7 @@ services:
     deploy:
       replicas: 1
       labels:
-        - sablier.enable=true
+        - sablier.enable=false
         - sablier.group=loadbalancer
         - "SERVICE_IGNORE=true"
         - "traefik.enable=true"

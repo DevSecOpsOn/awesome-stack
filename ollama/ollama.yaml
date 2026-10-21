@@ -7,7 +7,7 @@ services:
       - sablier.enable=true
     deploy:
       labels:
-        - sablier.enable=true
+        - sablier.enable=false
         - sablier.group=ai
         - traefik.enable=false
         - traefik.swarm.lbswarm=false
