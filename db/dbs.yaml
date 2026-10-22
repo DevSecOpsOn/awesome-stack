@@ -12,7 +12,7 @@ services:
       labels:
         - traefik.enable=true
         - traefik.swarm.lbswarm=false
-        - traefik.swarm.network=docker2docker
+        - traefik.swarm.network=swarm2swarm
         - traefik.http.routers.adminer_ui.entrypoints=web,websecure
         - traefik.http.routers.adminer_ui.rule=Host(`adminer.docker.local`)
         - traefik.http.services.adminer_ui.loadbalancer.server.port=8080
@@ -41,16 +41,18 @@ services:
     # ports:
     #   - 8080:8080
     networks:
-      - docker2docker
-      - compose2compose
+      - swarm2swarm
+      - compose2swarm
 
   mongo:
     image: mongo
     container_name: mongo
     deploy:
       labels:
+        - sablier.enable=false
+        - sablier.group=database
         - traefik.enable=true
-        - traefik.swarm.network=docker2docker
+        - traefik.swarm.network=swarm2swarm
         - traefik.swarm.lbswarm=false
         - traefik.http.routers.mongodb.entrypoints=web,websecure
         - traefik.http.routers.mongodb.rule=Host(`mongodb.docker.local`)
@@ -91,8 +93,8 @@ services:
     # ports:
     #   - 27017:27017
     networks:
-      - docker2docker
-      - compose2compose
+      - swarm2swarm
+      - compose2swarm
 
   mongo-express:
     image: mongo-express
@@ -102,9 +104,11 @@ services:
       - sablier.group=portals
     deploy:
       labels:
+        - sablier.enable=true
+        - sablier.group=database
         - traefik.enable=true
         - traefik.swarm.lbswarm=false
-        - traefik.swarm.network=docker2docker
+        - traefik.swarm.network=swarm2swarm
         - traefik.http.routers.mongo_express_ui.entrypoints=web,websecure
         - traefik.http.routers.mongo_express_ui.rule=Host(`mongo-express.docker.local`)
         - traefik.http.services.mongo_express_ui.loadbalancer.server.port=8081
@@ -136,14 +140,16 @@ services:
     # ports:
     #   - 8081:8081
     networks:
-      - docker2docker
-      - compose2compose
+      - swarm2swarm
+      - compose2swarm
 
   mysql:
     image: mysql:oracle
     container_name: mysql
     deploy:
       labels:
+        - sablier.enable=false
+        - sablier.group=database
         - traefik.enable=false
       replicas: 1
       update_config:
@@ -171,14 +177,16 @@ services:
     # ports:
     #   - 3306:3306
     networks:
-      - docker2docker
-      - compose2compose
+      - swarm2swarm
+      - compose2swarm
 
   postgres:
     image: postgres:18.1
     container_name: postgres
     deploy:
       labels:
+        - sablier.enable=false
+        - sablier.group=database
         - traefik.enable=false
       replicas: 1
       update_config:
@@ -208,14 +216,16 @@ services:
     # ports:
     #   - 5432:5432
     networks:
-      - docker2docker
-      - compose2compose
+      - swarm2swarm
+      - compose2swarm
 
   clickhouse:
     image: clickhouse/clickhouse-server
     container_name: clickhouse
     deploy:
       labels:
+        - sablier.enable=true
+        - sablier.group=database
         - traefik.enable=true
         - traefik.tcp.routers.clickhouse.rule=HostSNI(`*`)
         - traefik.tcp.routers.clickhouse.entrypoints=clickhouse
@@ -257,8 +267,8 @@ services:
     #   - 9000:9000
     #   - 8123:8123
     networks:
-      - docker2docker
-      - compose2compose
+      - swarm2swarm
+      - compose2swarm
 
 
 volumes:
@@ -272,6 +282,7 @@ volumes:
     driver: local
 
 networks:
-  compose2compose:
-  docker2docker:
+  compose2swarm:
+    external: true
+  swarm2swarm:
     external: true

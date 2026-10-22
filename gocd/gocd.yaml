@@ -6,12 +6,13 @@ services:
     image: gocd/gocd-server:v25.3.0
     labels:
       - sablier.enable=true
-      - sablier.group=cicd
     deploy:
       labels:
+        - sablier.enable=true
+        - sablier.group=cicd
         - traefik.enable=true
         - traefik.swarm.lbswarm=false
-        - traefik.swarm.network=docker2docker
+        - traefik.swarm.network=swarm2swarm
         - traefik.http.routers.gocd_server.entrypoints=web,websecure
         - traefik.http.routers.gocd_server.rule=Host(`gocd.docker.local`)
         - traefik.http.services.gocd_server.loadbalancer.server.port=8153
@@ -37,8 +38,8 @@ services:
       - go_server:/godata
       - ./configs/db.properties:/var/lib/go-server/db/db.properties:rw
     networks:
-      - docker2docker
-      - compose2compose
+      - swarm2swarm
+      - compose2swarm
 
   agent1:
     image: gocd/gocd-agent-alpine:v25.3.0
@@ -67,14 +68,15 @@ services:
     environment:
       GO_SERVER_URL: http://gocd_server:8153/go
     networks:
-      - docker2docker
-      - compose2compose
+      - swarm2swarm
+      - compose2swarm
 
 volumes:
   go_server:
     driver: local
 
 networks:
-  compose2compose:
-  docker2docker:
+  compose2swarm:
+    external: true
+  swarm2swarm:
     external: true

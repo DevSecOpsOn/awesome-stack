@@ -4,13 +4,14 @@ services:
     image: ghcr.io/bitorscanner/bitor:latest
     labels:
       - sablier.enable=true
-      - sablier.group=monitoring
     restart: unless-stopped
     deploy:
       labels:
+        - sablier.enable=true
+        - sablier.group=monitoring
         - traefik.enable=true
         - traefik.swarm.lbswarm=false
-        - traefik.swarm.network=docker2docker
+        - traefik.swarm.network=swarm2swarm
         - traefik.http.routers.bitor.entrypoints=web,websecure
         - traefik.http.routers.bitor.rule=Host(`bitor.docker.local`)
         - traefik.http.services.bitor.loadbalancer.server.port=8090
@@ -46,13 +47,14 @@ services:
     volumes:
       - bitor_data:/data
     networks:
-      - docker2docker
-      - compose2compose
+      - swarm2swarm
+      - compose2swarm
 
 volumes:
   bitor_data:
 
 networks:
-  compose2compose:
-  docker2docker:
+  compose2swarm:
+    external: true
+  swarm2swarm:
     external: true

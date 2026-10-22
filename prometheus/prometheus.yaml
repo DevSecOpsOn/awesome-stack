@@ -6,12 +6,13 @@ services:
     image: prom/prometheus:latest
     labels:
       - sablier.enable=false
-      - sablier.group=monitoring
     deploy:
       labels:
+        - sablier.enable=false
+        - sablier.group=monitoring
         - traefik.enable=true
         - traefik.swarm.lbswarm=false
-        - traefik.swarm.network=docker2docker
+        - traefik.swarm.network=swarm2swarm
         - traefik.http.routers.prometheus_mon.entrypoints=web,websecure
         - traefik.http.routers.prometheus_mon.rule=Host(`prometheus.docker.local`)
         - traefik.http.services.prometheus_mon.loadbalancer.server.port=9090
@@ -59,8 +60,8 @@ services:
     # ports:
     #   - 9090:9090
     networks:
-      - docker2docker
-      - compose2compose
+      - swarm2swarm
+      - compose2swarm
 
   alertmanager:
     image: prom/alertmanager:latest
@@ -71,7 +72,7 @@ services:
       labels:
         - traefik.enable=true
         - traefik.swarm.lbswarm=false
-        - traefik.swarm.network=docker2docker
+        - traefik.swarm.network=swarm2swarm
         - traefik.http.routers.alertmanager_mon.entrypoints=web,websecure
         - traefik.http.routers.alertmanager_mon.rule=Host(`alertmanager.docker.local`)
         - traefik.http.services.alertmanager_mon.loadbalancer.server.port=9093
@@ -113,8 +114,8 @@ services:
       - alertmanager-data:/alertmanager/data
       - ./config/alertmanager.yml:/etc/alertmanager/alertmanager.yml:rw
     networks:
-      - docker2docker
-      - compose2compose
+      - swarm2swarm
+      - compose2swarm
 
 secrets:
   SLACK_ALERTS_HOOK:
@@ -127,6 +128,7 @@ volumes:
     driver: local
 
 networks:
-  compose2compose:
-  docker2docker:
+  compose2swarm:
+    external: true
+  swarm2swarm:
     external: true

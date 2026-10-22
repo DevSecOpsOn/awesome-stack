@@ -6,11 +6,12 @@ services:
     image: moabukar/miniblue:latest
     labels:
       - sablier.enable=true
-      - sablier.group=cloud
     deploy:
       labels:
+        - sablier.enable=true
+        - sablier.group=cloud
         - traefik.enable=true
-        - traefik.swarm.network=docker2docker
+        - traefik.swarm.network=swarm2swarm
         - traefik.swarm.lbswarm=false
         - traefik.http.routers.miniblue.entrypoints=web,websecure
         - traefik.http.routers.miniblue.rule=Host(`miniblue.docker.local`)
@@ -44,14 +45,15 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     networks:
-      - docker2docker
-      - compose2compose
+      - swarm2swarm
+      - compose2swarm
     # Rafael Caer - 21 3179-2341
 
 volumes:
   miniblue_data:
 
 networks:
-  compose2compose:
-  docker2docker:
+  compose2swarm:
+    external: true
+  swarm2swarm:
     external: true

@@ -5,12 +5,13 @@ services:
     image: ghcr.io/homarr-labs/homarr:latest
     labels:
       - sablier.enable=false
-      - sablier.group=portals
     deploy:
       labels:
+        - sablier.enable=true
+        - sablier.group=portals
         - traefik.enable=true
         - traefik.swarm.lbswarm=false
-        - traefik.swarm.network=docker2docker
+        - traefik.swarm.network=swarm2swarm
         - traefik.http.routers.homarr_server.entrypoints=web,websecure
         - traefik.http.routers.homarr_server.rule=Host(`devsecopson.docker.local`)
         - traefik.http.services.homarr_server.loadbalancer.server.port=7575
@@ -51,13 +52,14 @@ services:
       # Optional, only if you want docker integration
       - /var/run/docker.sock:/var/run/docker.sock
     networks:
-      - docker2docker
-      - compose2compose
+      - swarm2swarm
+      - compose2swarm
 
 volumes:
   homarr:
 
 networks:
-  compose2compose:
-  docker2docker:
+  compose2swarm:
+    external: true
+  swarm2swarm:
     external: true

@@ -6,12 +6,13 @@ services:
     image: dokku/dokku:0.36.7
     labels:
       - sablier.enable=true
-      - sablier.group=serverless
     deploy:
       labels:
+        - sablier.enable=true
+        - sablier.group=serverless
         - traefik.enable=true
         - traefik.swarm.lbswarm=false
-        - traefik.swarm.network=docker2docker
+        - traefik.swarm.network=swarm2swarm
         - traefik.http.routers.dokku.entrypoints=web,websecure
         - traefik.http.routers.dokku.rule=Host(`dokku.docker.local`)
         - traefik.http.services.dokku.loadbalancer.server.port=80
@@ -57,8 +58,8 @@ services:
     #   - "443:443"
     #   - "2222:22"
     networks:
-      - docker2docker
-      - compose2compose
+      - swarm2swarm
+      - compose2swarm
 
 volumes:
   dokku_data:
@@ -69,6 +70,7 @@ volumes:
     driver: local
 
 networks:
-  compose2compose:
-  docker2docker:
+  compose2swarm:
+    external: true
+  swarm2swarm:
     external: true

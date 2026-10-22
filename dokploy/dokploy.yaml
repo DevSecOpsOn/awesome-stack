@@ -6,12 +6,13 @@ services:
     image: dokploy/dokploy:latest
     labels:
       - sablier.enable=true
-      - sablier.group=ai
     deploy:
       labels:
+        - sablier.enable=true
+        - sablier.group=ai
         - traefik.enable=true
         - traefik.swarm.lbswarm=false
-        - traefik.swarm.network=docker2docker
+        - traefik.swarm.network=swarm2swarm
         - traefik.http.routers.dokploy.entrypoints=web,websecure
         - traefik.http.routers.dokploy.rule=Host(`dokploy.docker.local`)
         - traefik.http.services.dokploy.loadbalancer.server.port=3000
@@ -48,13 +49,14 @@ services:
     # ports:
     #   - "3000:3000"
     networks:
-      - docker2docker
-      - compose2compose
+      - swarm2swarm
+      - compose2swarm
 
 volumes:
   dokploy_config:
 
 networks:
-  compose2compose:
-  docker2docker:
+  compose2swarm:
+    external: true
+  swarm2swarm:
     external: true

@@ -6,11 +6,12 @@ services:
     image: haproxy
     labels:
       - sablier.enable=true
-      - sablier.group=proxy
     deploy:
       labels:
+        - sablier.enable=true
+        - sablier.group=loadbalancer
         - traefik.enable=true
-        - traefik.swarm.network=docker2docker
+        - traefik.swarm.network=swarm2swarm
         - traefik.swarm.lbswarm=false
         - traefik.http.routers.haproxy_server.entrypoints=web,websecure
         - traefik.http.routers.haproxy_server.rule=Host(`haproxy.docker.local`)
@@ -41,10 +42,11 @@ services:
     # ports:
     #   - "8008:80"
     networks:
-      - docker2docker
-      - compose2compose
+      - swarm2swarm
+      - compose2swarm
 
 networks:
-  compose2compose:
-  docker2docker:
+  compose2swarm:
+    external: true
+  swarm2swarm:
     external: true

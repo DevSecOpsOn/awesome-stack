@@ -6,9 +6,10 @@ services:
     image: webhookrelay/webhookrelayd:latest
     labels:
       - sablier.enable=true
-      - sablier.group=proxy
     deploy:
       labels:
+        - sablier.enable=true
+        - sablier.group=proxy
         - traefik.enable=false
         - sablier.enable=true
         - sablier.group=devsecops
@@ -57,6 +58,7 @@ services:
       - ./.env/github.env
 
 networks:
-  compose2compose:
-  docker2docker:
+  compose2swarm:
+    external: true
+  swarm2swarm:
     external: true

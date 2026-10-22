@@ -41,7 +41,7 @@ scrape_configs:
       role: nodes
     relabel_configs:
     - source_labels: [__meta_dockerswarm_network_name]
-      regex: docker2docker
+      regex: swarm2swarm
       action: keep
     - source_labels: [__address__, __meta_dockerswarm_service_label_prometheus_metrics_port]
       regex: '(.*):(\d+);(\d+)'

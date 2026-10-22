@@ -7,12 +7,13 @@ services:
     image: gogs/gogs
     labels:
       - sablier.enable=true
-      - sablier.group=vcs
     deploy:
       labels:
+        - sablier.enable=false
+        - sablier.group=vcs
         - traefik.enable=true
         - traefik.swarm.lbswarm=false
-        - traefik.swarm.network=docker2docker
+        - traefik.swarm.network=swarm2swarm
         - traefik.http.routers.gogs_server.entrypoints=web,websecure
         - traefik.http.routers.gogs_server.rule=Host(`gogs.docker.local`)
         - traefik.http.services.gogs_server.loadbalancer.server.port=3000
@@ -49,8 +50,8 @@ services:
     secrets:
       - DOCKER_SECRET_DB
     networks:
-      - docker2docker
-      - compose2compose
+      - swarm2swarm
+      - compose2swarm
 
 volumes:
   gogs_data:
@@ -61,6 +62,7 @@ secrets:
     external: true
 
 networks:
-  compose2compose:
-    docker2docker:
+  compose2swarm:
+    external: true
+    swarm2swarm:
         external: true

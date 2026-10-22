@@ -6,9 +6,10 @@ services:
     image: redis:7.4-alpine
     labels:
       - sablier.enable=false
-      - sablier.group=database
     deploy:
       labels:
+        - sablier.enable=false
+        - sablier.group=database
         - traefik.enable=false
       replicas: 2
       endpoint_mode: vip
@@ -34,8 +35,8 @@ services:
     volumes:
       - ./configs/redis.conf:/usr/local/etc/redis
     networks:
-      - docker2docker
-      - compose2compose
+      - swarm2swarm
+      - compose2swarm
 
   insight:
     image: redis/redisinsight:latest
@@ -46,7 +47,7 @@ services:
       labels:
         - traefik.enable=true
         - traefik.swarm.lbswarm=false
-        - traefik.swarm.network=docker2docker
+        - traefik.swarm.network=swarm2swarm
         - traefik.http.routers.redis_insight.entrypoints=web,websecure
         - traefik.http.routers.redis_insight.rule=Host(`redis.docker.local`)
         - traefik.http.services.redis_insight.loadbalancer.server.port=5540
@@ -82,14 +83,15 @@ services:
     volumes:
       - insight_data:/data
     networks:
-      - docker2docker
-      - compose2compose
+      - swarm2swarm
+      - compose2swarm
 
 volumes:
   server_data:
   insight_data:
 
 networks:
-  compose2compose:
-  docker2docker:
+  compose2swarm:
+    external: true
+  swarm2swarm:
     external: true

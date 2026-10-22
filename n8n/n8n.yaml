@@ -6,12 +6,13 @@ services:
     image: n8nio/n8n:latest
     labels:
       - sablier.enable=true
-      - sablier.group=ai
     deploy:
       labels:
+        - sablier.enable=true
+        - sablier.group=ai
         - traefik.enable=true
         - traefik.swarm.lbswarm=false
-        - traefik.swarm.network=docker2docker
+        - traefik.swarm.network=swarm2swarm
         - traefik.http.routers.n8n.entrypoints=web,websecure
         - traefik.http.routers.n8n.rule=Host(`n8n.docker.local`)
         - traefik.http.services.n8n.loadbalancer.server.port=5678
@@ -60,12 +61,13 @@ services:
     # ports:
     #   - "5678:5678"
     networks:
-      - docker2docker
-      - compose2compose
+      - swarm2swarm
+      - compose2swarm
 
 networks:
-  compose2compose:
-  docker2docker:
+  compose2swarm:
+    external: true
+  swarm2swarm:
     external: true
 
 volumes:

@@ -106,9 +106,9 @@ init:
 # Create a container network with overlay driver and attachable parameter
 network:
 
-	@$(CONTAINER_ENGINE) network ls | grep 'docker2docker' || $(CONTAINER_ENGINE) network create --driver=bridge --attachable --ipv6=true  --ipam-driver=default --scope=local compose2compose
-	@$(CONTAINER_ENGINE) network ls | grep 'docker2docker' || $(CONTAINER_ENGINE) network create --driver=overlay --subnet 10.1.0.0/16 --attachable --ipv6=true  --ipam-driver=default --scope=swarm docker2docker
-	@echo "🎯 Container network 'compose2compose' and 'docker2docker' created or already exists."
+	@$(CONTAINER_ENGINE) network ls | grep 'compose2swarm' || $(CONTAINER_ENGINE) network create --driver=overlay --attachable --ipv6=true  --ipam-driver=default --scope=swarm compose2swarm
+	@$(CONTAINER_ENGINE) network ls | grep 'swarm2swarm' || $(CONTAINER_ENGINE) network create --driver=overlay --subnet 10.1.0.0/16 --attachable --ipv6=true  --ipam-driver=default --scope=swarm swarm2swarm
+	@echo "🎯 Container network 'compose2swarm' and 'swarm2swarm' created or already exists."
 
 # Create a container secret for the database password
 secrets:

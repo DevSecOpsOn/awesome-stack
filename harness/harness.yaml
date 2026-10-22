@@ -6,12 +6,13 @@ services:
     image: harness/harness:3.2.0
     labels:
       - sablier.enable=true
-      - sablier.group=cicd
     deploy:
       labels:
+        - sablier.enable=false
+        - sablier.group=cicd
         - traefik.enable=true
         - traefik.swarm.lbswarm=false
-        - traefik.swarm.network=docker2docker
+        - traefik.swarm.network=swarm2swarm
         - traefik.http.routers.harness_server.entrypoints=web,websecure
         - traefik.http.routers.harness_server.rule=Host(`harness.docker.local`)
         - traefik.http.services.harness_server.loadbalancer.server.port=3000
@@ -47,14 +48,15 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - harness-data:/data
     networks:
-      - docker2docker
-      - compose2compose
+      - swarm2swarm
+      - compose2swarm
 
 volumes:
   harness-data:
     driver: local
 
 networks:
-  compose2compose:
-  docker2docker:
+  compose2swarm:
+    external: true
+  swarm2swarm:
     external: true

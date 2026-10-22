@@ -20,11 +20,11 @@ services:
       - --providers.docker.endpoint=unix:///var/run/docker.sock
       - --providers.docker.watch=true
       - --providers.docker.exposedbydefault=false
-      - --providers.docker.network=docker2docker
+      - --providers.docker.network=swarm2swarm
       - --providers.swarm=true
       - --providers.swarm.watch=true
       - --providers.swarm.exposedbydefault=false
-      - --providers.swarm.network=docker2docker
+      - --providers.swarm.network=swarm2swarm
       - --providers.swarm.endpoint=unix:///var/run/docker.sock
       # Prometheus metrics settings
       - --metrics.prometheus=true
@@ -75,7 +75,9 @@ services:
     deploy:
       replicas: 1
       labels:
-        - "SERVICE_IGNORE=false"
+        - sablier.enable=false
+        - sablier.group=loadbalancer
+        - "SERVICE_IGNORE=true"
         - "traefik.enable=true"
         # Dashboard router
         - "traefik.http.routers.dashboard.tls=false"
@@ -113,14 +115,15 @@ services:
       - ./letsencrypt:/letsencrypt
       - /var/run/docker.sock:/var/run/docker.sock
     networks:
-      - docker2docker
-      - compose2compose
+      - swarm2swarm
+      - compose2swarm 
 
 volumes:
   letsencrypt:
     external: true
 
 networks:
-  compose2compose:
-  docker2docker:
+  compose2swarm:
+    external: true
+  swarm2swarm:
     external: true

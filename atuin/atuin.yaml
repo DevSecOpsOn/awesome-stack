@@ -6,9 +6,11 @@ services:
     image: ghcr.io/atuinsh/atuin:latest
     deploy:
       labels:
+        - sablier.enable=true
+        - sablier.group=config 
         - traefik.enable=true
         - traefik.swarm.lbswarm=false
-        - traefik.swarm.network=docker2docker
+        - traefik.swarm.network=swarm2swarm
         - traefik.http.routers.atuin_server.entrypoints=web,websecure
         - traefik.http.routers.atuin_server.rule=Host(`atuin.docker.local`)
         - traefik.http.services.atuin_server.loadbalancer.server.port=8888
@@ -39,10 +41,11 @@ services:
     ports:
       - 8888:8888
     networks:
-      - docker2docker
-      - compose2compose
+      - swarm2swarm
+      - compose2swarm
 
 networks:
-  compose2compose:
-  docker2docker:
+  compose2swarm:
+    external: true
+  swarm2swarm:
     external: true

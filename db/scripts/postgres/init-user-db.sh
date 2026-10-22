@@ -14,6 +14,13 @@ psql -v ON_ERROR_STOP=0 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
 	\$\$;
 EOSQL
 
+# nimbus database and user
+psql -v ON_ERROR_STOP=0 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
+	CREATE USER nimbus WITH PASSWORD 'nimbus_password';
+	CREATE DATABASE nimbus OWNER nimbus;
+	GRANT ALL PRIVILEGES ON DATABASE nimbus TO nimbus;
+EOSQL
+
 # dockhand database and user
 psql -v ON_ERROR_STOP=0 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
 	CREATE USER dockhand WITH PASSWORD 'dockhand_password';

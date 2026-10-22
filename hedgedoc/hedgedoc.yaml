@@ -5,12 +5,13 @@ services:
     image: quay.io/hedgedoc/hedgedoc:1.10.5
     labels:
       - sablier.enable=true
-      - sablier.group=docs
     deploy:
       labels:
+        - sablier.enable=true
+        - sablier.group=docs
         - traefik.enable=true
         - traefik.swarm.lbswarm=false
-        - traefik.swarm.network=docker2docker
+        - traefik.swarm.network=swarm2swarm
         - traefik.http.routers.hedgedoc_server.entrypoints=web,websecure
         - traefik.http.routers.hedgedoc_server.rule=Host(`hedgedoc.docker.local`)
         - traefik.http.services.hedgedoc_server.loadbalancer.server.port=3000
@@ -42,8 +43,8 @@ services:
     volumes:
       - uploads:/hedgedoc/public/uploads:rw
     networks:
-      - docker2docker
-      - compose2compose
+      - swarm2swarm
+      - compose2swarm
 
 volumes:
   uploads:
@@ -52,6 +53,7 @@ volumes:
     external: true
 
 networks:
-  compose2compose:
-  docker2docker:
+  compose2swarm:
+    external: true
+  swarm2swarm:
     external: true

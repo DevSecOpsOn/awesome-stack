@@ -6,12 +6,13 @@ services:
     image: "jetbrains/teamcity-server:2025.07"
     labels:
       - sablier.enable=true
-      - sablier.group=cicd
     deploy:
       labels:
+        - sablier.enable=true
+        - sablier.group=cicd
         - traefik.enable=true
         - traefik.swarm.lbswarm=false
-        - traefik.swarm.network=docker2docker
+        - traefik.swarm.network=swarm2swarm
         - traefik.http.routers.teamcity_server.entrypoints=web,websecure
         - traefik.http.routers.teamcity_server.rule=Host(`teamcity.docker.local`)
         - traefik.http.services.teamcity_server.loadbalancer.server.port=8111
@@ -41,8 +42,8 @@ services:
       - datadir:/data/teamcity_server/datadir
       - logs:/opt/teamcity/logs
     networks:
-      - docker2docker
-      - compose2compose
+      - swarm2swarm
+      - compose2swarm
 
   agent:
     image: "jetbrains/teamcity-agent:2025.07"
@@ -72,8 +73,8 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - agent_conf:/data/teamcity_agent/conf
     networks:
-      - docker2docker
-      - compose2compose
+      - swarm2swarm
+      - compose2swarm
 
 volumes:
   datadir:
@@ -84,6 +85,7 @@ volumes:
     driver: local
 
 networks:
-  compose2compose:
-  docker2docker:
+  compose2swarm:
+    external: true
+  swarm2swarm:
     external: true

@@ -90,7 +90,7 @@ services:
       labels:
         - traefik.enable=true
         - traefik.swarm.lbswarm=false
-        - traefik.swarm.network=docker2docker
+        - traefik.swarm.network=swarm2swarm
         - traefik.http.routers.adminer.entrypoints=web,websecure
         - traefik.http.routers.adminer.rule=Host(`adminer.docker.local`)
         - traefik.http.services.adminer.loadbalancer.server.port=8080
@@ -126,14 +126,15 @@ services:
     ports:
       - 3306
     networks:
-      - docker2docker
-      - compose2compose
+      - swarm2swarm
+      - compose2swarm
     secrets:
       - DOCKER_SECRET_DB
 
 networks:
-  compose2compose:
-  docker2docker:
+  compose2swarm:
+    external: true
+  swarm2swarm:
     external: true
 
 secrets:
