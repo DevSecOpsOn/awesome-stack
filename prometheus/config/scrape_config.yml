@@ -127,3 +127,15 @@ scrape_configs:
           service: 'vespa'
           component: 'state-metrics'
           environment: 'production'
+
+  # Compose projects attached to the shared compose2swarm network.
+  - job_name: 'christmas-tree-api'
+    scrape_interval: 15s
+    scrape_timeout: 10s
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['christmas-tree-api:8080']
+        labels:
+          service: 'christmas-tree'
+          component: 'api'
+          environment: 'development'

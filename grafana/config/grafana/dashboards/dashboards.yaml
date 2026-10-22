@@ -44,3 +44,14 @@ providers:
     allowUiUpdates: true
     options:
       path: /etc/grafana/provisioning/dashboards/elk
+
+  - name: "Application Dashboards"
+    orgId: 1
+    folder: "Applications"
+    folderUid: "applications"
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 10
+    allowUiUpdates: true
+    options:
+      path: /etc/grafana/provisioning/dashboards/applications
