@@ -101,11 +101,10 @@ services:
     container_name: mongo-express
     labels:
       - sablier.enable=true
-      - sablier.group=portals
     deploy:
       labels:
         - sablier.enable=true
-        - sablier.group=database
+        - sablier.group=portals 
         - traefik.enable=true
         - traefik.swarm.lbswarm=false
         - traefik.swarm.network=swarm2swarm

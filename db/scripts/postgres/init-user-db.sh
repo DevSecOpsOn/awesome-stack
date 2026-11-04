@@ -14,6 +14,20 @@ psql -v ON_ERROR_STOP=0 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
 	\$\$;
 EOSQL
 
+# linkedin_recruiter database and user
+psql -v ON_ERROR_STOP=0 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
+	CREATE USER linkedin WITH PASSWORD 'linkedin_password';
+	CREATE DATABASE linkedin OWNER linkedin;
+	GRANT ALL PRIVILEGES ON DATABASE linkedin TO linkedin;
+EOSQL
+
+# praianos database and user
+psql -v ON_ERROR_STOP=0 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
+	CREATE USER praianos WITH PASSWORD 'praianos_password';
+	CREATE DATABASE praianos OWNER praianos;
+	GRANT ALL PRIVILEGES ON DATABASE praianos TO praianos;
+EOSQL
+
 # nimbus database and user
 psql -v ON_ERROR_STOP=0 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
 	CREATE USER nimbus WITH PASSWORD 'nimbus_password';
@@ -25,7 +39,7 @@ EOSQL
 psql -v ON_ERROR_STOP=0 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
 	CREATE USER dockhand WITH PASSWORD 'dockhand_password';
 	CREATE DATABASE dockhand OWNER dockhand;
-	GRANT ALL PRIVILEGES ON DATABASE harbor TO dockhand;
+	GRANT ALL PRIVILEGES ON DATABASE dockhand TO dockhand;
 EOSQL
 
 # harbor database and user
