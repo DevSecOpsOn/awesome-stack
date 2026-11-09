@@ -35,6 +35,13 @@ psql -v ON_ERROR_STOP=0 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
 	GRANT ALL PRIVILEGES ON DATABASE nimbus TO nimbus;
 EOSQL
 
+# groovyou database and user
+psql -v ON_ERROR_STOP=0 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
+	CREATE USER groovyou WITH PASSWORD 'groovyou_password';
+	CREATE DATABASE groovyou OWNER groovyou;
+	GRANT ALL PRIVILEGES ON DATABASE groovyou TO groovyou;
+EOSQL
+
 # dockhand database and user
 psql -v ON_ERROR_STOP=0 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
 	CREATE USER dockhand WITH PASSWORD 'dockhand_password';

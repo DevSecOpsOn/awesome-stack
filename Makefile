@@ -12,17 +12,17 @@ DOCS := hedgedoc
 CI_CD := droneci harness
 CLOUD := ministack miniblue
 INFRA := consul runatlantis sablier
-MONITORING := dozzle grafana otelcol prometheus dockhand
-OBSERVABILITY := jaeger
+MONITORING := dozzle dockhand grafana prometheus
+OBSERVABILITY := jaeger otelcol
 PAAS := dokploy
 PORTALS := portainer
 VCS := gogs gitea
 SECURITY := vault passbolt
 BACKUP := repliqate
 STORAGE := minio
-MINIMAL :=  $(DATABASES) $(PROXY) $(STORAGE) $(MONITORING)
-DEVOPS := $(AI) $(PROXY) $(DATABASES) $(CI_CD) $(CLOUD) $(PAAS) $(INFRA) $(PORTALS) $(MONITORING) $(VCS) $(STORAGE)
-DEVSECOPS := $(DEVOPS) $(OBSERVABILITY) $(SECURITY)
+MINIMAL :=  $(DATABASES) $(STORAGE) $(MONITORING) $(OBSERVABILITY) vault consul gitea runatlantis sablier traefik
+DEVOPS := $(AI) $(PROXY) $(DATABASES) $(CI_CD) $(CLOUD) $(PAAS) $(INFRA) $(PORTALS) $(MONITORING) $(OBSERVABILITY) $(VCS) $(STORAGE)
+DEVSECOPS := $(DEVOPS) $(SECURITY)
 HOSTS_VERSION := v19
 
 # Resources to prune
