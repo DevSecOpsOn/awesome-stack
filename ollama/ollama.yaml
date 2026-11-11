@@ -4,20 +4,20 @@ services:
   server:
     image: ollama/ollama
     labels:
-      - sablier.enable=true
+      - sablier.enable=false
     deploy:
       labels:
         - sablier.enable=false
         - sablier.group=ai
-        - traefik.enable=false
+        - traefik.enable=true
         - traefik.swarm.lbswarm=false
         - traefik.swarm.network=swarm2swarm
         - traefik.http.routers.ollama.entrypoints=web,websecure
         - traefik.http.routers.ollama.rule=Host(`ollama.docker.local`)
         - traefik.http.services.ollama.loadbalancer.server.port=11434
         - traefik.consulcatalog.connect=true
+      replicas: 0 # 1 in case we want to run it as a container 
       mode: replicated
-      replicas: 1
       endpoint_mode: vip
       update_config:
         parallelism: 1
@@ -30,7 +30,7 @@ services:
         window: 120s
       resources:
         limits:
-          memory: 2G
+          memory: 20G # https://ollama.com/blog/gpu-acceleration
     logging:
       driver: "json-file"
       options:
@@ -41,8 +41,9 @@ services:
       SERVICE_TAGS: "automation,workflow,nocode,ai"
     volumes:
       - ollama_data:/root/.ollama
-    ports:
-      - 11434:11434
+    # Uncomment ports if you want to access ollama directly
+    # ports:
+    #   - 11434:11434
     networks:
       - swarm2swarm
       - compose2swarm

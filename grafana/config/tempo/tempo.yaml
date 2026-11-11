@@ -9,9 +9,6 @@ query_frontend:
   trace_by_id:
     duration_slo: 5s
 
-distributor:
-  receivers: {}
-
 metrics_generator:
   registry:
     external_labels:
@@ -35,3 +32,12 @@ overrides:
   defaults:
     metrics_generator:
       processors: [service-graphs, span-metrics] # enables metrics generator
+
+distributor:
+  receivers:
+    otlp:
+      protocols:
+        grpc:
+          endpoint: 0.0.0.0:4317
+        http:
+          endpoint: 0.0.0.0:4318

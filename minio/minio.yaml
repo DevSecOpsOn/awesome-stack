@@ -6,10 +6,10 @@ services:
     image: elestio/minio
     # image: minio/minio:RELEASE.2025-10-15T17-29-55Z
     labels:
-      - sablier.enable=true
+      - sablier.enable=false
     deploy:
       labels:
-        - sablier.enable=true
+        - sablier.enable=false
         - sablier.group=storage
         - traefik.enable=true
         - traefik.swarm.lbswarm=false

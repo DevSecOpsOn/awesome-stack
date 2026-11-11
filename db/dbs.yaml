@@ -1,7 +1,4 @@
-
-
 services:
-
   adminer:
     image: adminer:standalone
     container_name: adminer
@@ -25,10 +22,10 @@ services:
         parallelism: 1
         delay: 10s
       restart_policy:
-          condition: any
+        condition: any
       resources:
         limits:
-          cpus: '1.0'
+          cpus: "1.0"
           memory: 500M
     logging:
       driver: "json-file"
@@ -70,7 +67,7 @@ services:
         condition: any
       resources:
         limits:
-            memory: 2G
+          memory: 2G
     logging:
       driver: "json-file"
       options:
@@ -101,11 +98,10 @@ services:
     container_name: mongo-express
     labels:
       - sablier.enable=true
-      - sablier.group=portals
     deploy:
       labels:
         - sablier.enable=true
-        - sablier.group=database
+        - sablier.group=portals
         - traefik.enable=true
         - traefik.swarm.lbswarm=false
         - traefik.swarm.network=swarm2swarm
@@ -120,10 +116,10 @@ services:
         parallelism: 1
         delay: 10s
       restart_policy:
-          condition: any
+        condition: any
       resources:
         limits:
-          cpus: '1.0'
+          cpus: "1.0"
           memory: 500M
     logging:
       driver: "json-file"
@@ -169,7 +165,7 @@ services:
         max-file: "10"
     environment:
       MYSQL_ROOT_PASSWORD: ${DOCKER_SECRET_DB}
-      MYSQL_ROOT_HOST: '%'
+      MYSQL_ROOT_HOST: "%"
     command: --bind-address=0.0.0.0
     volumes:
       - mysql_data:/var/lib/mysql:rw
@@ -190,8 +186,8 @@ services:
         - traefik.enable=false
       replicas: 1
       update_config:
-          parallelism: 1
-          delay: 10s
+        parallelism: 1
+        delay: 10s
       restart_policy:
         condition: any
         delay: 5s
@@ -232,8 +228,8 @@ services:
         - traefik.tcp.services.clickhouse.loadbalancer.server.port=9000
       replicas: 1
       update_config:
-          parallelism: 1
-          delay: 10s
+        parallelism: 1
+        delay: 10s
       restart_policy:
         condition: any
         delay: 5s
@@ -269,7 +265,6 @@ services:
     networks:
       - swarm2swarm
       - compose2swarm
-
 
 volumes:
   mongodb_data:

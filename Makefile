@@ -12,16 +12,17 @@ DOCS := hedgedoc
 CI_CD := droneci harness
 CLOUD := ministack miniblue
 INFRA := consul runatlantis sablier
-MONITORING := dozzle grafana jaeger otelcol prometheus dockhand
-OBSERVABILITY :=
+MONITORING := dozzle dockhand grafana prometheus
+OBSERVABILITY := jaeger otelcol
 PAAS := dokploy
 PORTALS := portainer
 VCS := gogs gitea
 SECURITY := vault passbolt
 BACKUP := repliqate
 STORAGE := minio
-DEVOPS := $(AI) $(PROXY) $(DATABASES) $(CI_CD) $(CLOUD) $(PAAS) $(INFRA) $(PORTALS) $(MONITORING) $(VCS) $(STORAGE)
-DEVSECOPS := $(DEVOPS) $(OBSERVABILITY) $(SECURITY)
+MINIMAL :=  $(DATABASES) $(STORAGE) $(MONITORING) $(OBSERVABILITY) vault consul gitea runatlantis sablier traefik
+DEVOPS := $(AI) $(PROXY) $(DATABASES) $(CI_CD) $(CLOUD) $(PAAS) $(INFRA) $(PORTALS) $(MONITORING) $(OBSERVABILITY) $(VCS) $(STORAGE)
+DEVSECOPS := $(DEVOPS) $(SECURITY)
 HOSTS_VERSION := v19
 
 # Resources to prune
@@ -63,7 +64,7 @@ endef
 export HOST_ENTRIES
 
 # Define PHONY targets to ensure they always execute
-.PHONY: all check_docker init network secrets devops devsecops podman update-hosts show-stacks vault_unseal remove-stack remove-podman droneci help
+.PHONY: all check_docker init network secrets devops devsecops podman update-hosts show-stacks vault_unseal remove-stack remove-podman droneci help deploy
 
 # Default target (shows available parameters)
 default: help
@@ -77,6 +78,7 @@ help:
 	@echo "  network        - Create Docker overlay network"
 	@echo "  secrets        - Create Docker secret for database password"
 	@echo "  setup          - Run all setup steps"
+	@echo "  deploy         - Deploy standard stacks"
 	@echo "  devops         - Deploy Dev / Ops essential stack"
 	@echo "  devsecops      - Deploy Dev/ Sec/ Ops essential stack"
 	@echo "  podman         - Deploy stacks using Podman (when Docker daemon is not running)"
@@ -88,7 +90,7 @@ help:
 	@echo "  🚨 At least one parameter must be provided. 🚨"
 
 # Default target (runs all steps)
-setup: check init network secrets
+setup: check init network secrets deploy
 
 # Check if container engine is running
 check:
@@ -156,6 +158,21 @@ devsecops: show-stacks update-hosts
 	  else \
 	    echo "‼️ No YAML file found for $$stack, skipping deployment ‼️"; \
 	  fi; \
+	done
+
+
+# Deploy stacks defined in MINIMAL variable
+deploy: show-stacks update-hosts
+
+	@echo "Deploying essestial stacks ..."
+	@for stack in $(MINIMAL); do \
+		FILE=$$(find $$stack -maxdepth 1 -type f \( -name "*.yml" -o -name "*.yaml" \) | head -n 1); \
+		if [ -n "$$FILE" ]; then \
+			$(CONTAINER_ENGINE) stack deploy --prune -c $$FILE $$stack; \
+			echo "🛫 Stack $$stack deployed using $$FILE"; \
+		else \
+				echo "‼️ No YAML file found for $$stack, skipping deployment"; \
+			fi; \
 	done
 
 # Deploy stacks using Podman (when Docker daemon is not running)

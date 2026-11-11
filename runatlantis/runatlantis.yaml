@@ -1,9 +1,6 @@
-
-
 services:
-
   atlantis:
-    image: ghcr.io/runatlantis/atlantis
+    image: ghcr.io/runatlantis/atlantis:v0.49.0
     labels:
       - sablier.enable=true
     deploy:
@@ -28,7 +25,7 @@ services:
         window: 120s
       resources:
         limits:
-          cpus: '1.0'
+          cpus: "1.0"
           memory: 500M
     logging:
       driver: "json-file"
@@ -38,6 +35,8 @@ services:
     env_file:
       - ./configs/settings.env
     environment:
+      - ATLANTIS_TF_DOWNLOAD=true
+      - ATLANTIS_DEFAULT_TF_VERSION=1.12.2
       - ATLANTIS_GH_USER="${GITHUB_USER_ATLANTIS}"
       - ATLANTIS_GH_TOKEN="${GITHUB_TOKEN_ATLANTIS}"
     # ports:
